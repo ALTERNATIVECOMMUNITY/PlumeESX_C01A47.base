@@ -1,0 +1,63 @@
+<html>
+	<head>
+		<link rel="stylesheet" href="reset.css" type="text/css">
+        <link rel="stylesheet" href="index.css" type="text/css">
+        <script src="nui://game/ui/jquery.js" type="text/javascript"></script>
+	</head>
+	<body>
+		<style>
+
+		.top {
+			margin: 0;
+		  position: absolute;
+		  top: 10%;
+			right: 34%;
+		}
+
+		.vertical-center {
+		  margin: 0;
+		  position: absolute;
+		  top: 30%;
+			right: 19%;
+
+		}
+
+		.bottom {
+		  margin: 0;
+		  position: absolute;
+		  bottom: 5%;
+			right: 30%;
+		}
+
+		::placeholder {
+			color: #FFFFFF;
+
+		}
+
+		</style>
+		<div id="container">
+			<div class='top'>
+				 Cash Register
+				</div>
+            <form id="form">
+							<div class='vertical-center'>
+                <input type="text"
+								STYLE="color: #FFFFFF;
+								font-family: Verdana;
+								font-weight: bold;
+								font-size: 12px;
+								background-color: #426b59;"
+								maxlength="4"
+								placeholder="$$ Amount"
+								id="input"></input>
+                <br>
+			</div>
+						<div class='bottom'>
+                <button id="submit" type="submit">Charge</button>
+                <button id="close">Cancel</button>
+            </form>
+						</div>
+		</div>
+        <script src="./index.js" type="text/javascript"></script>
+	</body>
+</html>

@@ -1,0 +1,7 @@
+--Name: policeGarage1 | 2021-06-26T21:56:32Z
+BoxZone:Create(vector3(446.1, -988.95, 25.7), 2.5, 4, {
+  name="policeGarage1",
+  heading=0,
+  --debugPoly=true
+})
+
