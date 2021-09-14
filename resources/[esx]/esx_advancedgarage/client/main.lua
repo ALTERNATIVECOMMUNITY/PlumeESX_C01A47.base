@@ -822,7 +822,9 @@ function StoreOwnedPoliceMenu()
 		local vehicleProps = ESX.Game.GetVehicleProperties(vehicle)
 		local plate = vehicleProps.plate
 		local tyre = {IsVehicleTyreBurst(vehicle, 0, false),IsVehicleTyreBurst(vehicle, 1, false),IsVehicleTyreBurst(vehicle, 4, false),IsVehicleTyreBurst(vehicle, 5, false)}
+		local doors = {IsVehicleDoorDamaged(vehicle, 0),IsVehicleDoorDamaged(vehicle, 1),IsVehicleDoorDamaged(vehicle, 2),IsVehicleDoorDamaged(vehicle, 3),IsVehicleDoorDamaged(vehicle, 4),IsVehicleDoorDamaged(vehicle, 5)}
 		vehicleProps['tyre'] = tyre
+		vehicleProps['doors'] = doors
 		ESX.TriggerServerCallback('esx_advancedgarage:storeVehicle', function(valid)
 			if valid then
 					StoreVehicle(vehicle, vehicleProps, currentLoc)	
@@ -2229,7 +2231,7 @@ function SpawnVehicle2(vehicle, plate, fuel, vector, heading)
 		ESX.Game.SetVehicleProperties(callback_vehicle, vehicle)
 		SetVehRadioStation(callback_vehicle, "OFF")
 		SetVehicleBodyHealth(callback_vehicle, vehicle.bodyHealth)
-		doCarDamages(vehicle.engineHealth, vehicle.bodyHealth, callback_vehicle, vehicle.tyre)
+		doCarDamages(vehicle.engineHealth, vehicle.bodyHealth, callback_vehicle, vehicle.tyre, vehicle.doors)
 		SetVehicleUndriveable(callback_vehicle, false)
 		SetVehicleEngineOn(callback_vehicle, true, true)
 		local carplate = GetVehicleNumberPlateText(callback_vehicle)
@@ -2243,7 +2245,7 @@ function SpawnVehicle2(vehicle, plate, fuel, vector, heading)
 	end)
 	TriggerServerEvent('esx_advancedgarage:setVehicleState', plate, 0)	
 end
-
+--[[
 function doCarDamages(eh, bh, veh, tyres)
 	smash = false
 	damageOutside = false
@@ -2297,7 +2299,51 @@ function doCarDamages(eh, bh, veh, tyres)
         end
     end
 end
-
+]]--
+function doCarDamages(eh, bh, veh, tyres, doors)
+    local windows = {0,1,2,3,4}
+    --local doors = {0,1,2,3,4,5}
+    local tobreakW = 0
+    local tobreakD = 0
+    if eh and bh and tyres then
+        local engine = eh + 0.0
+        local body = bh + 0.0
+        local dif = (1000.0 - body) + 1.0
+        local toDmg = math.floor(dif/100)
+        local currentVehicle = (veh and IsEntityAVehicle(veh)) and veh or GetVehiclePedIsIn(PlayerPedId(), false)
+        if toDmg >5 then
+            toDmg = 5
+        end
+        Citizen.Wait(100)
+        if toDmg > 0 then 
+            math.randomseed(os.time())
+            for i=1, toDmg, 1 do
+                local ran = math.random(0,4) 
+                SmashVehicleWindow(currentVehicle, windows[ran])
+            end
+        end
+        SetVehicleEngineHealth(currentVehicle, engine)
+        if tyres then
+			local toPop = {0,1,4,5}
+            for i, t in pairs(tyres) do
+				if t == 1 then
+					SetVehicleTyreBurst(currentVehicle, toPop[i], true, 1000.0)	
+				end
+			end
+        end
+		if doors then 
+			for i, d in pairs(doors) do
+				if d == 1 then 
+					SetVehicleDoorBroken(currentVehicle, i-1, true)
+				end
+			end
+		end
+        	if body < 1000 then
+           	 	SetVehicleBodyHealth(currentVehicle, body)
+        	end
+		
+    end
+end
 -- Check Vehicles
 function DoesAPlayerDrivesVehicle(plate)
 	local isVehicleTaken = false
@@ -2830,15 +2876,12 @@ function RefreshJobBlips()
 		if ESX.PlayerData.job and ESX.PlayerData.job.name == 'mechanic' then
 			for k,v in pairs(Config.MechanicPounds) do
 				local blip = AddBlipForCoord(v.Marker)
-
 				SetBlipSprite (blip, Config.Blips.JPounds.Sprite)
 				SetBlipColour (blip, Config.Blips.JPounds.Color)
 				SetBlipDisplay(blip, Config.Blips.JPounds.Display)
 				SetBlipScale  (blip, Config.Blips.JPounds.Scale)
 				SetBlipAsShortRange(blip, true)
-
 				BeginTextCommandSetBlipName("STRING")
-				AddTextComponentString(_U('blip_mechanic_impound'))
 				EndTextCommandSetBlipName(blip)
 				table.insert(JobBlips, blip)
 			end
