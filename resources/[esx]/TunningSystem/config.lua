@@ -70,6 +70,17 @@ Config.TunningLocations = {
 		blipeveryone = false, --if false, the blip will be only visible to the job
 		blipsprite = 446, -- The blip sprite, there's a list of all available: https://docs.fivem.net/docs/game-references/blips/
 		used = false, -- Don't tuch
+	},
+	{
+		name = "Tuner Shop", -- Name of the Location that will appear if blipmap == true
+		coords = vector3(145.0,-3030.25, 7.04), --The coords to open menu
+		job = "mosleys_mech", --The job that have access to it (remove the line and everyone can access it)
+		society = false, -- The money that the client pay goes to the society account? (will only work if job isn't nil.)
+		societypercentage = 50, --50% of the money goes to society and the other 50% goes to the mechanic (will only work if society = true.)
+		blipmap = false, --Show the blip in map?
+		blipeveryone = false, --if false, the blip will be only visible to the job
+		blipsprite = 446, -- The blip sprite, there's a list of all available: https://docs.fivem.net/docs/game-references/blips/
+		used = false, -- Don't tuch
 	}
 }
 
