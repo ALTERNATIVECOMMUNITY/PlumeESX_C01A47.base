@@ -234,11 +234,6 @@ AddEventHandler('advancedGarage:OpenJobGarageRadial', function()
 		end
 	end
 end)
---temp
-RegisterCommand('checkwindow', function(source, args, raw)
-	local veh = GetVehiclePedIsIn(GetPlayerPed(-1))
-	print(IsVehicleWindowIntact(veh, 2))
-end)
 
 RegisterNetEvent('advancedGarage:SpawnCar')
 AddEventHandler('advancedGarage:SpawnCar', function(veh)
