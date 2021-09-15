@@ -235,9 +235,9 @@ AddEventHandler('advancedGarage:OpenJobGarageRadial', function()
 	end
 end)
 --temp
-RegisterCommand('getModel', function(source, args, raw)
-	local veh = GetEntityModel(GetVehiclePedIsIn(GetPlayerPed(-1)))
-	print(veh)
+RegisterCommand('smashwindow', function(source, args, raw)
+	local veh = GetVehiclePedIsIn(GetPlayerPed(-1))
+	SmashVehicleWindow(veh, 7)
 end)
 
 RegisterNetEvent('advancedGarage:SpawnCar')
@@ -373,8 +373,10 @@ function StoreOwnedPoliceMenu()
 		local plate = vehicleProps.plate
 		local tyre = {IsVehicleTyreBurst(vehicle, 0, false),IsVehicleTyreBurst(vehicle, 1, false),IsVehicleTyreBurst(vehicle, 4, false),IsVehicleTyreBurst(vehicle, 5, false)}
 		local doors = {IsVehicleDoorDamaged(vehicle, 0),IsVehicleDoorDamaged(vehicle, 1),IsVehicleDoorDamaged(vehicle, 2),IsVehicleDoorDamaged(vehicle, 3),IsVehicleDoorDamaged(vehicle, 4),IsVehicleDoorDamaged(vehicle, 5)}
+		local windows = {IsVehicleWindowIntact(vehicle, 0), IsVehicleWindowIntact(vehicle, 1), IsVehicleWindowIntact(vehicle, 2), IsVehicleWindowIntact(vehicle, 3), IsVehicleWindowIntact(vehicle, 4), IsVehicleWindowIntact(vehicle, 5)}
 		vehicleProps['tyre'] = tyre
 		vehicleProps['doors'] = doors
+		vehicleProps['windows'] = windows
 		ESX.TriggerServerCallback('esx_advancedgarage:storeVehicle', function(valid)
 			if valid then
 					StoreVehicle(vehicle, vehicleProps, currentLoc)	
@@ -1150,28 +1152,32 @@ function StoreVehicle(vehicle, vehicleProps, location)
 end
 
 function SpawnVehicle(vehicle, plate, fuel, vector, heading)
-	ESX.Game.SpawnVehicle(vehicle.model, vector, heading, function(callback_vehicle)
-		ESX.Game.SetVehicleProperties(callback_vehicle, vehicle)
-		SetVehRadioStation(callback_vehicle, "OFF")
-		SetVehicleBodyHealth(callback_vehicle, vehicle.bodyHealth)
-		doCarDamages(vehicle.engineHealth, vehicle.bodyHealth, callback_vehicle, vehicle.tyre, vehicle.doors)
-		Citizen.Wait(100)
-		SetVehicleUndriveable(callback_vehicle, false)
-		SetVehicleEngineOn(callback_vehicle, true, true)
-		local carplate = GetVehicleNumberPlateText(callback_vehicle)
-		table.insert(vehInstance, {vehicleentity = callback_vehicle, plate = carplate})
-		if Config.Main.LegacyFuel then
-			exports['LegacyFuel']:SetFuel(callback_vehicle, fuel)
-		end
-		TaskWarpPedIntoVehicle(GetPlayerPed(-1), callback_vehicle, -1)
-		exports["onyxLocksystem"]:givePlayerKeys(carplate)
-		exports['mythic_notify']:DoHudText('inform', 'You pulled out your vehicle!')
-	end)
-	TriggerServerEvent('esx_advancedgarage:setVehicleState', plate, 0)	
+	if vector ~= nil then
+		ESX.Game.SpawnVehicle(vehicle.model, vector, heading, function(callback_vehicle)
+			ESX.Game.SetVehicleProperties(callback_vehicle, vehicle)
+			SetVehRadioStation(callback_vehicle, "OFF")
+			SetVehicleBodyHealth(callback_vehicle, vehicle.bodyHealth)
+			doCarDamages(vehicle.engineHealth, vehicle.bodyHealth, callback_vehicle, vehicle.tyre, vehicle.doors, vehicle.windows)
+			Citizen.Wait(100)
+			SetVehicleUndriveable(callback_vehicle, false)
+			SetVehicleEngineOn(callback_vehicle, true, true)
+			local carplate = GetVehicleNumberPlateText(callback_vehicle)
+			table.insert(vehInstance, {vehicleentity = callback_vehicle, plate = carplate})
+			if Config.Main.LegacyFuel then
+				exports['LegacyFuel']:SetFuel(callback_vehicle, fuel)
+			end
+			TaskWarpPedIntoVehicle(GetPlayerPed(-1), callback_vehicle, -1)
+			exports["onyxLocksystem"]:givePlayerKeys(carplate)
+			exports['mythic_notify']:DoHudText('inform', 'You pulled out your vehicle!')
+		end)
+		TriggerServerEvent('esx_advancedgarage:setVehicleState', plate, 0)	
+	else
+		exports['mythic_notify']:DoHudText('inform', 'Try standing in the spot...')
+	end
 end
 
-function doCarDamages(eh, bh, veh, tyres, doors)
-    local windows = {0,1,2,3,4}
+function doCarDamages(eh, bh, veh, tyres, doors, windows)
+	Citizen.Wait(100)
     local tobreakW = 0
     local tobreakD = 0
     if eh and bh and tyres then
@@ -1181,15 +1187,18 @@ function doCarDamages(eh, bh, veh, tyres, doors)
         local dif = (1000.0 - body) + 1.0
         local toDmg = math.floor(dif/100)
         local currentVehicle = (veh and IsEntityAVehicle(veh)) and veh or GetVehiclePedIsIn(PlayerPedId(), false)
-        if toDmg >5 then
-            toDmg = 5
-        end
-        if toDmg > 0 then 
-            for i=1, toDmg, 1 do
-                local ran = math.random(0,4) 
-                SmashVehicleWindow(currentVehicle, windows[ran])
-            end
-        end
+        
+        if windows then 
+			print('trying windows')
+			local i = 0
+			for _, w in pairs(windows) do
+				print(w)
+				if w == 1 then
+					SmashVehicleWindow(currentVehicle, i)		
+				end
+				i = i +1
+			end
+		end	
         SetVehicleEngineHealth(currentVehicle, engine)
         if tyres then
 			local toPop = {0,1,4,5}

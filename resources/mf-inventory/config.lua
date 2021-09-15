@@ -37,7 +37,8 @@ Config = {
     lockpick = true,
     thermite = true,
     laptop = true,
-    badge = true
+    badge = true,
+    mechanic_tools = true
   },
 
   -- Cash account name, for shops.
