@@ -235,9 +235,9 @@ AddEventHandler('advancedGarage:OpenJobGarageRadial', function()
 	end
 end)
 --temp
-RegisterCommand('smashwindow', function(source, args, raw)
+RegisterCommand('checkwindow', function(source, args, raw)
 	local veh = GetVehiclePedIsIn(GetPlayerPed(-1))
-	SmashVehicleWindow(veh, 7)
+	print(IsVehicleWindowIntact(veh, 2))
 end)
 
 RegisterNetEvent('advancedGarage:SpawnCar')
@@ -1190,13 +1190,11 @@ function doCarDamages(eh, bh, veh, tyres, doors, windows)
         
         if windows then 
 			print('trying windows')
-			local i = 0
-			for _, w in pairs(windows) do
+			for i, w in pairs(windows) do
 				print(w)
-				if w == 1 then
-					SmashVehicleWindow(currentVehicle, i)		
+				if w ~= 1 then
+					SmashVehicleWindow(currentVehicle, i-1)		
 				end
-				i = i +1
 			end
 		end	
         SetVehicleEngineHealth(currentVehicle, engine)
