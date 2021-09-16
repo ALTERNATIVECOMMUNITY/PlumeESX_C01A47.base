@@ -17,6 +17,7 @@ local compassRunning = false
 local fuel = 0
 local voiceLevel = 0
 local speed = 0
+local beltShow = true
 
 --
 
@@ -69,6 +70,10 @@ AddEventHandler("np-ui:voice:updateHud", function(level)
     setHudValue("voice", level)
 end)
 
+RegisterNetEvent("np-ui:updateBelt")
+AddEventHandler("np-ui:updateBelt", function()
+    beltShow = not beltShow
+end)
 
 --
 
@@ -85,8 +90,8 @@ function roundedRadar()
         while not HasStreamedTextureDictLoaded("circlemap") do
             Citizen.Wait(0)
         end
-        AddReplaceTexture("platform:/textures/graphics", "radarmasksm", "circlemap", "radarmasklg")
-        AddReplaceTexture("platform:/textures/graphics", "radarmasklg", "circlemap", "radarmasklg")
+        --AddReplaceTexture("platform:/textures/graphics", "radarmasksm", "circlemap", "radarmasklg")
+        --AddReplaceTexture("platform:/textures/graphics", "radarmasklg", "circlemap", "radarmasklg")
 
         SetBlipAlpha(GetNorthRadarBlip(), 0.0)
         -- SetBlipScale(GetMainPlayerBlipId(), 0.7)
@@ -213,11 +218,10 @@ end
 
 -- SPEEDOMETER or vehicle Event
 
-local beltShow = false
 local harnessDurability = 0
-AddEventHandler("seatbelt", function(belt)
-    beltShow = belt
-end)
+--AddEventHandler("seatbelt", function(belt)
+   --beltShow = belt
+--end)
 AddEventHandler("harness", function(belt, dur)
     beltShow = belt
     harnessDurability = dur
@@ -263,7 +267,7 @@ function generateSpeedo()
             end
             setHudValue("altitude", altitude)
             setHudValue("altitudeShow", altitude ~= false)
-            setHudValue("beltShow", not beltShow)
+            setHudValue("beltShow", beltShow)
             setHudValue("engineDamageShow", engineDamageShow)
             setHudValue("fuel", math.ceil(fuel))
             setHudValue("gasDamageShow", gasDamageShow)
@@ -290,7 +294,7 @@ function generateSpeedo()
             if GetVehicleEngineHealth(veh) < 400.0 then
                 engineDamageShow = true
             end
-            if GetVehiclePetrolTankHealth(veh) < 3002.0 then
+            if fuel < 20.0 then
                 gasDamageShow = true
             end
             
