@@ -136,6 +136,11 @@ Citizen.CreateThread(function()
     -- =----------------------- [DLC: After Hours] -----------------------=
     -- ====================================================================
     AfterHoursNightclubs.LoadDefault()          -- -1604.664, -3012.583, -78.000
-
+    RequestIpl("np_tunershop_milo_")
+    interiorID = GetInteriorAtCoords(137.7009, -3029.3040, 11.7953)      
+    if IsValidInterior(interiorID) then         
+            EnableInteriorProp(interiorID, "balcony")  
+    RefreshInterior(interiorID)
+    end
 end)
 
