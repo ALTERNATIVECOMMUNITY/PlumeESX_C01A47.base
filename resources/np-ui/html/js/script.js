@@ -481,9 +481,9 @@ window.addEventListener('message',function(event){
                 Progress(msg.data.stress,"#stress")
             }
 
-            if (msg.data.stamina >= 0) {
-                Progress(msg.data.stamina,"#stamina")
-            }
+            //if (msg.data.stamina >= 0) {
+                //Progress(msg.data.stamina,"#stamina")
+            //}
             
             // voice
             if (msg.data.voice >= 0) {
@@ -557,7 +557,7 @@ window.addEventListener('message',function(event){
             document.getElementById("armortoggle").checked = (msg.dataset.armor == "true");
             document.getElementById("hungertoggle").checked = (msg.dataset.hunger == "true");
             document.getElementById("thirsttoggle").checked = (msg.dataset.thirst == "true");
-            document.getElementById("staminatoggle").checked = (msg.dataset.stamina == "true");
+            //document.getElementById("staminatoggle").checked = (msg.dataset.stamina == "true");
             document.getElementById("oxygentoggle").checked = (msg.dataset.oxygen == "true");
             document.getElementById("stresstoggle").checked = (msg.dataset.stress == "true");
             document.getElementById("voicetoggle").checked = (msg.dataset.voice == "true");
@@ -565,7 +565,7 @@ window.addEventListener('message',function(event){
         case "initialize":
             $('.cash').hide();
             $('.cashtransaction').hide();
-
+           // $("#staminahud").hide()
             $("#develophud").hide()
             $("#debuginghud").hide()
             Progress(100,"#develop")
@@ -595,11 +595,11 @@ window.addEventListener('message',function(event){
                 $("#thirsthud").fadeIn(500)
             }
 
-            if (msg.toggledata.stamina == "true") {
-                $("#staminahud").fadeOut(500)
-            }else{
-                $("#staminahud").fadeIn(500)
-            }
+            //if (msg.toggledata.stamina == "true") {
+                //$("#staminahud").fadeOut(500)
+            //}else{
+                //$("#staminahud").fadeIn(500)
+            //}
 
             if (msg.toggledata.oxygen == "true") {
                 $("#oxygenhud").fadeOut(500)
@@ -635,9 +635,9 @@ window.addEventListener('message',function(event){
                 $("#thirst").css("stroke",msg.colordata.thirst)
             }
 
-            if (msg.colordata.stamina != "") {
-                $("#stamina").css("stroke",msg.colordata.stamina)
-            }
+           // if (msg.colordata.stamina != "") {
+                //$("#stamina").css("stroke",msg.colordata.stamina)
+            //}
 
             if (msg.colordata.oxygen != "") {
                 $("#oxygen").css("stroke",msg.colordata.oxygen)

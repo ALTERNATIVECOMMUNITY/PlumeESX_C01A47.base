@@ -90,8 +90,8 @@ function roundedRadar()
         while not HasStreamedTextureDictLoaded("circlemap") do
             Citizen.Wait(0)
         end
-        --AddReplaceTexture("platform:/textures/graphics", "radarmasksm", "circlemap", "radarmasklg")
-        --AddReplaceTexture("platform:/textures/graphics", "radarmasklg", "circlemap", "radarmasklg")
+        AddReplaceTexture("platform:/textures/graphics", "radarmasksm", "circlemap", "radarmasklg")
+        AddReplaceTexture("platform:/textures/graphics", "radarmasklg", "circlemap", "radarmasklg")
 
         SetBlipAlpha(GetNorthRadarBlip(), 0.0)
         -- SetBlipScale(GetMainPlayerBlipId(), 0.7)
@@ -324,6 +324,7 @@ function startHealthArmorUpdates()
     local prevHealth = -1
     local prevArmor = -1
     local oxygen
+    setHudValue("oxygen", 100)
     Citizen.CreateThread(function()
         startedHealthArmorUpdates = true
         while true do
@@ -333,7 +334,7 @@ function startHealthArmorUpdates()
             local health = GetEntityHealth(GetPed()) - 100
             if health > 100 then health = 100 end
             if health < 0 or isDead then health = 0 end
-            if IsPedSwimmingUnderWater(PlayerPedId()) then
+            if IsEntityInWater(PlayerPedId()) then
                 oxygen = GetPlayerUnderwaterTimeRemaining(PlayerId()) * 10
                 setHudValue("oxygen", oxygen)
             end

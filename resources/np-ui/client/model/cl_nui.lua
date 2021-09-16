@@ -41,8 +41,6 @@ function showSettings()
     SetNuiFocus(true, true)
 end
 
-RegisterKeyMapping("+hud","Show HUD Settings","keyboard","f3")
-
 RegisterCommand("+hud", function()
     showSettings()
 end, false)
