@@ -29,13 +29,10 @@ Citizen.CreateThread(function()
 		TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
 		Citizen.Wait(0)
 	end
-
 	while ESX.GetPlayerData().job == nil do
 		Citizen.Wait(10)
 	end
-
 	ESX.PlayerData = ESX.GetPlayerData()
-
 	CreateBlips()
 	RefreshJobBlips()
 end)
@@ -49,9 +46,7 @@ AddEventHandler('esx:playerLoaded', function(xPlayer)
 			RefreshPrivateBlips()
 		end)
 	end
-
 	ESX.PlayerData = xPlayer
-
 	RefreshJobBlips()
 end)
 
@@ -70,7 +65,6 @@ AddEventHandler('esx_advancedgarage:getPropertiesC', function(xPlayer)
 			DeletePrivateBlips()
 			RefreshPrivateBlips()
 		end)
-
 		ESX.ShowNotification(_U('get_properties'))
 		TriggerServerEvent('esx_advancedgarage:printGetProperties')
 	end
@@ -345,8 +339,7 @@ function OpenPoliceGarageMenu()
 				if not noCars then 
 					exports["br-menu"]:SubMenu('Owned Vehicles' , '' , 'owned')
 				end
-				exports["br-menu"]:SubMenu('Shared Vehicles' , '' , 'shared')
-				
+				exports["br-menu"]:SubMenu('Shared Vehicles' , '' , 'shared')	
 			end
 	end
 end				
@@ -372,6 +365,7 @@ function StoreOwnedPoliceMenu()
 		vehicleProps['tyre'] = tyre
 		vehicleProps['doors'] = doors
 		vehicleProps['windows'] = windows
+		vehicleProps['dirt'] = GetVehicleDirtLevel(vehicle)
 		ESX.TriggerServerCallback('esx_advancedgarage:storeVehicle', function(valid)
 			if valid then
 					StoreVehicle(vehicle, vehicleProps, currentLoc)	
@@ -451,9 +445,7 @@ function OpenTowingGarageMenu()
 				if not noCars then 
 					exports["br-menu"]:SubMenu('Owned Vehicles' , '' , 'owned')
 				end
-				exports["br-menu"]:SubMenu('Shared Vehicles' , '' , 'shared')
-				
-			
+				exports["br-menu"]:SubMenu('Shared Vehicles' , '' , 'shared')	
 	end
 end
 -- Start of Mechanic Code
@@ -1156,6 +1148,7 @@ function SpawnVehicle(vehicle, plate, fuel, vector, heading)
 			Citizen.Wait(100)
 			SetVehicleUndriveable(callback_vehicle, false)
 			SetVehicleEngineOn(callback_vehicle, true, true)
+			SetVehicleDirtLevel(callback_vehicle, vehicle.dirt)
 			local carplate = GetVehicleNumberPlateText(callback_vehicle)
 			table.insert(vehInstance, {vehicleentity = callback_vehicle, plate = carplate})
 			if Config.Main.LegacyFuel then
@@ -1176,19 +1169,16 @@ function doCarDamages(eh, bh, veh, tyres, doors, windows)
     local tobreakW = 0
     local tobreakD = 0
     if eh and bh and tyres then
-		print('we apply dmg')
         local engine = eh + 0.0
         local body = bh + 0.0
         local dif = (1000.0 - body) + 1.0
         local toDmg = math.floor(dif/100)
         local currentVehicle = (veh and IsEntityAVehicle(veh)) and veh or GetVehiclePedIsIn(PlayerPedId(), false)
-        
         if windows then 
-			print('trying windows')
 			for i, w in pairs(windows) do
 				print(w)
 				if w ~= 1 then
-					SmashVehicleWindow(currentVehicle, i-1)		
+					RemoveVehicleWindow(currentVehicle, i-1)		
 				end
 			end
 		end	
@@ -1208,11 +1198,9 @@ function doCarDamages(eh, bh, veh, tyres, doors, windows)
 				end
 			end
 		end
-
         if body < 1000 then
            	SetVehicleBodyHealth(currentVehicle, body)
         end
-		
     end
 end
 -- Check Vehicles

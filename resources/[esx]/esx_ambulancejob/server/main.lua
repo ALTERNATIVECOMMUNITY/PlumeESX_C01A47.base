@@ -289,6 +289,7 @@ ESX.RegisterCommand('revive', 'admin', function(xPlayer, args, showError)
 	args.playerId.triggerEvent('mythic_hospital:client:RemoveBleed')
 	args.playerId.triggerEvent('mythic_hospital:client:ResetLimbs')
 	args.playerId.triggerEvent('esx_ambulancejob:revive')
+	args.playerId.triggerEvent('esx_status:set', 'stress', 0)
 end, true, {help = _U('revive_help'), validate = true, arguments = {
 	{name = 'playerId', help = 'The player id', type = 'player'}
 }})
