@@ -12,6 +12,36 @@ RegisterNUICallback("phone:PayPhoneDial", function(data, cb)
     cb("ok")
 end)
 
+RegisterNUICallback("raid_clothes:sendOutfit", function(data, cb)
+    SetNuiFocus(false, false)
+    exports['np-ui']:openApplication('textbox', {
+        callbackUrl = 'raid_clothes:sendOutfitName',
+        key = 1,
+        show = true,
+        items = {
+            {
+                icon = "fas fa-pencil-alt",
+                label = "Outfit Name:",
+                name = "text",
+            },
+        },
+    })
+    cb("ok")
+end)
+
+RegisterNUICallback("raid_clothes:sendOutfitName", function(data, cb)
+    TriggerEvent('raid_clothes:sendOutfit', data[1].value)
+    SetNuiFocus(false, false)
+    cb("ok")
+end)
+
+RegisterNUICallback("raid_clothes:outfitsChange", function(data, cb)
+    TriggerEvent('raid_clothes:outfitsChange', data.key)
+    print(json.encode(data))
+    SetNuiFocus(false, false)
+    cb("ok")
+end)
+
 RegisterCommand("testnewkeyboard", function()
     exports['np-ui']:openApplication('textbox', {
         callbackUrl = 'np-ui:test:input',

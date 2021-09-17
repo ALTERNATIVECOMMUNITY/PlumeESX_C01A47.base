@@ -304,31 +304,22 @@ end)
 
 RegisterNetEvent('raid_clothes:oufitsMenuRadial')
 AddEventHandler('raid_clothes:oufitsMenuRadial', function()
-    ESX.TriggerServerCallback('raid_clothes:getOutfits', function(savedOutfits)
-        for i,v in pairs(savedOutfits) do
-            changeOfClothes[i] = v
-            exports["br-menu"]:AddButton(i,'','raid_clothes:outfitsChange' , i, "Outfits")
-        end
-    end)
-    exports["br-menu"]:AddButton('Save outfit','Save outfit','raid_clothes:sendOutfit' , outfit, "Outfits")	
-    exports["br-menu"]:SubMenu('Outfits' , 'choose your outfit' , 'Outfits')
-    exports["br-menu"]:SetTitle('Outfits')
+    showOutfitMenu()
 end)
 
 RegisterNetEvent('raid_clothes:outfitsChange')
 AddEventHandler('raid_clothes:outfitsChange', function(v)
-    local index = tonumber(v)
-
-    SetClothing(changeOfClothes[index].drawables, changeOfClothes[index].props, changeOfClothes[index].drawtextures, changeOfClothes[index].proptextures)
-    Citizen.Wait(500)
-    SetPedHairColor(player, tonumber(changeOfClothes[index].hairColor[1]), tonumber(changeOfClothes[index].hairColor[2]))
-    TriggerEvent('raid_clothes:setpedfeatures', changeOfClothes[index])
+    print(v.drawables)
+    SetClothing(v.drawables, v.props, v.drawtextures, v.proptextures)
+    SetPedHairColor(player, tonumber(v.hairColor[1]), tonumber(v.hairColor[2]))
+    TriggerEvent('raid_clothes:setpedfeatures', v)
     Save(true)
 end)
 
 RegisterNetEvent('raid_clothes:sendOutfit')
-AddEventHandler('raid_clothes:sendOutfit', function(outfit)
+AddEventHandler('raid_clothes:sendOutfit', function(name)
     local outfit =  {
+        name = name,
         model = GetEntityModel(PlayerPedId()),
         hairColor = GetPedHair(),
         headBlend = GetPedHeadBlendData(),
@@ -348,6 +339,40 @@ AddEventHandler("raid_clothes:toggleprop", function(type, police)
     all.name = type
     ToggleProps(all)
 end)
+
+function showOutfitMenu()
+    local outfits = {}
+    local wait = true
+    ESX.TriggerServerCallback('raid_clothes:getOutfits', function(savedOutfits)
+        for i,v in pairs(savedOutfits) do
+            if v.name then
+                outfits[i] = {title = i..'. '..v.name, action= 'raid_clothes:outfitsChange', key = v}
+            else
+                outfits[i] = {title = i..'. ', action= 'raid_clothes:outfitsChange', key = v}    
+            end
+        end
+        wait = false
+    end)
+    while wait do
+        Citizen.Wait(10)
+    end
+    local menuData = {
+            {
+                title = 'Save outfit',
+                description = 'Save your fit for your next night out.',
+                action = 'raid_clothes:sendOutfit',
+                key = true
+            },
+            {
+                title = 'Change your clothes',
+                description = 'Save a trip to the clothing store.',
+                action = '',
+                key = '',
+                children = outfits
+            }
+    }
+    exports["np-ui"]:showContextMenu(menuData)
+end
 
 local toggleClothing = {}
 function ToggleProps(data, police)

@@ -76,7 +76,7 @@ AddEventHandler('raid_clothes:saveOutfit', function(outfit)
 	local xPlayer = ESX.GetPlayerFromId(source)
 	MySQL.Async.execute('INSERT INTO outfits (identifier, skin) VALUES (@owner, @outfit)', {
 		['@owner'] = xPlayer.identifier,
-		['@outfit'] = json.encode({model = outfit.model, hairColor = outfit.hairColor, headOverlay = outfit.headOverlay, headStructure = outfit.headStructure, drawables = outfit.drawables, props = outfit.props, drawtextures = outfit.drawtextures, proptextures = outfit.proptextures})
+		['@outfit'] = json.encode({name = outfit.name, model = outfit.model, hairColor = outfit.hairColor, headOverlay = outfit.headOverlay, headStructure = outfit.headStructure, drawables = outfit.drawables, props = outfit.props, drawtextures = outfit.drawtextures, proptextures = outfit.proptextures})
 	}, function(rowsChanged)
 		xPlayer.showNotification('Saved outfit!')
 	end)
