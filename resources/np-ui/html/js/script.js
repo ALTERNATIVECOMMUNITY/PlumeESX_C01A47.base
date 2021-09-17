@@ -149,6 +149,7 @@ textmenukey = null;
 
 
 const OpenMenu = (data) => {
+    console.log('made it here')
     if (data.show) {
         $(`.root-wrapper`).fadeIn(0)
         $(`.background`).fadeIn(0)
@@ -332,7 +333,7 @@ window.addEventListener('message',function(event){
             if (msg.data.street != null) {
                 $(".streetinfo").html(msg.data.street);
             }
-            $(".direction").find(".image").attr('style', 'transform: translate3d(' + ((-1* msg.data.heading) + -300) + 'px, 0px, 0px)');
+            $(".direction").find(".image").attr('style', 'transform: translate3d(' + ((-1* msg.data.heading)+ -235) + 'px, 0px, 0px)'); //+ -300
             if (msg.data.speed) {
                 setProgressSpeed(msg.data.speed,".progress-speed")
             }
@@ -672,6 +673,7 @@ window.addEventListener('message',function(event){
             
             break;
         case "textbox":
+            console.log('textbox')
             OpenMenu(msg.data);
             break;
         default:

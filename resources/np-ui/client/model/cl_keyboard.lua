@@ -6,10 +6,17 @@ RegisterNUICallback("np-ui:test:input", function(data, cb)
     cb("ok")
 end)
 
+RegisterNUICallback("phone:PayPhoneDial", function(data, cb)
+    TriggerEvent('phone:makepayphonecall', data[1])
+    SetNuiFocus(false, false)
+    cb("ok")
+end)
+
 RegisterCommand("testnewkeyboard", function()
     exports['np-ui']:openApplication('textbox', {
         callbackUrl = 'np-ui:test:input',
         key = 1,
+        show = true,
         items = {
             {
                 icon = "fas fa-pencil-alt",

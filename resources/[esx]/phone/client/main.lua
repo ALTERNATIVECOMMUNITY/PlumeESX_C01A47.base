@@ -20,18 +20,29 @@ local vehicles = {}
 local isDead = false
 local isNotInCall, isDialing, isReceivingCall, isCallInProgress = 0, 1, 2, 3
 local callStatus = isNotInCall
+local PayPhoneHex = {
+  1158960338,
+  -78626473,
+  1281992692,
+  -1058868155,
+  -429560270,
+  -2103798695,
+  295857659,
+  -1559354806,
+}
 
 ESX = nil
 
-Citizen.CreateThread(function()
+Citizen.CreateThread(function()  
   	while ESX == nil do
     	TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
     	Citizen.Wait(250)
   	end
 
-  	while ESX.GetPlayerData().job == nil do
+  	while ESX.GetPlayerData() == nil do
+      print('waiting')
 		Citizen.Wait(250)
-	end
+	  end
 	
   ESX.PlayerData = ESX.GetPlayerData()
   
@@ -39,6 +50,17 @@ Citizen.CreateThread(function()
   TriggerServerEvent('getYP')
   Citizen.Wait(200)
   --TriggerEvent("YPUpdatePhone")
+  exports["bt-target"]:AddTargetModel(PayPhoneHex, {
+    options = {
+    {
+      event = "phone:dialPayPhone",
+      icon = "fas fa-phone",
+      label = "Pay phone",
+    },
+    },
+      job = {"all"},
+      distance = 0.9
+    })
 end)
 
 RegisterNetEvent('esx:setJob')
@@ -56,6 +78,22 @@ RegisterNUICallback('btnNotifyToggle', function(data, cb)
       exports['mythic_notify']:DoHudText('error', 'Popups Disabled')
       --TriggerEvent("DoLongHudText","Popups Disabled")
     end
+end)
+
+RegisterNetEvent('phone:dialPayPhone')
+AddEventHandler('phone:dialPayPhone', function()
+  exports['np-ui']:openApplication('textbox', {
+    callbackUrl = 'phone:PayPhoneDial',
+    key = 1,
+    show = true,
+    items = {
+        {
+            icon = "fas fa-phone",
+            label = "Text",
+            name = "text",
+        }
+    }
+  })
 end)
 
 activeNumbersClient = {}
@@ -1261,7 +1299,7 @@ AddEventHandler('radiotalkcheck', function(args,senderid)
 
         TaskPlayAnim(ped, "random@arrests", "generic_radio_chatter", 8.0, 2.0, -1, 50, 2.0, 0, 0, 0 )
 
-        SetCurrentPedWeapon(ped, `WEAPON_UNARMED`, true)
+        SetCurrentPedWeapon(ped, 'WEAPON_UNARMED', true)
       end
 
 
@@ -1927,9 +1965,9 @@ AddEventHandler('animation:phonecallstart', function()
 
       --check if not unarmed
     local curw = GetSelectedPedWeapon(PlayerPedId())
-    noweapon = `WEAPON_UNARMED`
+    noweapon = 'WEAPON_UNARMED'
     if noweapon ~= curw then
-      SetCurrentPedWeapon(PlayerPedId(), `WEAPON_UNARMED`, true)
+      SetCurrentPedWeapon(PlayerPedId(), 'WEAPON_UNARMED', true)
     end
 
   end
@@ -1958,42 +1996,14 @@ AddEventHandler('phone:makecall', function(pnumber)
   end
 end)
 
-
-
-local PayPhoneHex = {
-  [1] = 1158960338,
-  [2] = -78626473,
-  [3] = 1281992692,
-  [4] = -1058868155,
-  [5] = -429560270,
-  [6] = -2103798695,
-  [7] = 295857659,
-  [8] = -1559354806,
-}
-
-function checkForPayPhone()
-  for i = 1, #PayPhoneHex do
-    local objFound = GetClosestObjectOfType( GetEntityCoords(PlayerPedId()), 5.0, PayPhoneHex[i], 0, 0, 0)
-    if DoesEntityExist(objFound) then
-      return true
-    end
-  end
-  return false
-end
-
 RegisterNetEvent('phone:makepayphonecall')
 AddEventHandler('phone:makepayphonecall', function(pnumber) 
-
-    if not checkForPayPhone() then
-      TriggerEvent("DoLongHudText","You are not near a payphone.",2)
-      return
-    end
-
     PhoneBooth = GetEntityCoords( PlayerPedId() )
     AnonCall = true
+    local pnumber = tonumber(pnumber.value)
 
-    local pnumber = tonumber(pnumber)
     if callStatus == isNotInCall and not isDead then
+      print(pnumber)
       TriggerEvent('phone:setCallState', isDialing)
       TriggerEvent("animation:phonecallstart")
       TriggerEvent("InteractSound_CL:PlayOnOne","payphonestart",0.5)

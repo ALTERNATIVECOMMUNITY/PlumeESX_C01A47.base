@@ -202,6 +202,7 @@ function generateCompass()
             local sWait = shouldShowSpeed() and speedometerWaitTime or 1000
             Citizen.Wait(math.min(cWait, sWait))
             local s = GetGameTimer()
+            local veh = GetVehiclePedIsIn(PlayerPedId())
             local heading = math.floor(-GetFinalRenderedCamRot(0).z % 360)
 
             sendAppEvent("hud.compass", {
@@ -259,7 +260,7 @@ function generateSpeedo()
     local altitude = false
     local engineDamageShow = false
     local gasDamageShow = false
-
+    beltShow = true
     Citizen.CreateThread(function()
         while engineOn do
             if flyer then

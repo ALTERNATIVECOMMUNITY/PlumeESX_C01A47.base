@@ -39,7 +39,7 @@ end)
 
 RegisterNetEvent("timeheader")
 AddEventHandler("timeheader", function(pHour, pMinutes)
-    setGameValue("time", ("%s:%s"):format(pHour > 9 and pHour or "0" .. pHour, pMinutes > 9 and pMinutes or "0" .. pMinutes))
+    setGameValue("time", ("%s:%s"):format(tonumber(pHour) > 9 and tonumber(pHour) or "0" .. tonumber(pHour), tonumber(pMinutes) > 9 and tonumber(pMinutes) or "0" .. tonumber(pMinutes)))
 end)
 
 RegisterNetEvent("kWeatherSync")
