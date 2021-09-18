@@ -67,6 +67,7 @@ end
 
 CreateThread(function()
     while true do
+        SetRadarZoom(1150)
         if GetPed() ~= PlayerPedId() then
             pedId = PlayerPedId()
             SetPedMinGroundTimeForStungun(pedId, 5000)

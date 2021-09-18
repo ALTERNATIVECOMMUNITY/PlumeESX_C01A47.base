@@ -18,6 +18,7 @@ Citizen.CreateThread(function()
         end)
         Citizen.Wait(1)
     end
+    ESX.UI.HUD.SetDisplay(0)
     PlayerData = ESX.GetPlayerData()
     calculateAccess()
     TriggerServerEvent('esx_service:activateService', 'towing', 10)

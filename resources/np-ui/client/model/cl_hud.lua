@@ -86,10 +86,13 @@ function roundedRadar()
         return
     end
     Citizen.CreateThread(function()
+        local minimap = RequestScaleformMovie("minimap")
         RequestStreamedTextureDict("circlemap", false)
         while not HasStreamedTextureDictLoaded("circlemap") do
             Citizen.Wait(0)
         end
+       -- AddReplaceTexture("platform:/textures/graphics", "radarmasksm", "circlemap",
+                     -- "radarmasksm")
         AddReplaceTexture("platform:/textures/graphics", "radarmasksm", "circlemap", "radarmasklg")
         AddReplaceTexture("platform:/textures/graphics", "radarmasklg", "circlemap", "radarmasklg")
 
@@ -138,7 +141,7 @@ function roundedRadar()
         -- posY seems to be based off of the top of the minimap, with 0.75 representing 0% and 1.75 representing 100%
         -- sizeX is based off the size of the minimap - 0.00 -> 0.10
         -- sizeY seems to be height based on minimap size, ranging from -0.25 to 0.25
-        setPos("minimap_mask", 0.1, 0.95, 0.09, 0.15)
+        setPos("minimap_mask", 0.1, 0.95, 0.05, 0.15)
         -- setPos("minimap_mask", 0.0, 0.75, 1.0, 1.0)
         -- setPos("minimap_mask",  baseXOffset, baseYOffset, baseXWidth, baseYHeight)
 
@@ -148,6 +151,14 @@ function roundedRadar()
         Citizen.Wait(0)
         SetRadarBigmapEnabled(false, false)
         DisplayRadar(1)
+        while true do
+        Wait(0)
+        BeginScaleformMovieMethod(minimap, "SETUP_HEALTH_ARMOUR")
+        ScaleformMovieMethodAddParamInt(3)
+        EndScaleformMovieMethod()
+        BeginScaleformMovieMethod(minimap, 'HIDE_SATNAV')
+        EndScaleformMovieMethod()
+        end
     end)
 end
 
