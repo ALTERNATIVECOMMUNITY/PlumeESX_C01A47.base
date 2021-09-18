@@ -107,20 +107,20 @@ function OpenAmbulanceGarageMenu()
 
 	ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedAmbulanceCars)
 		local children = {}
-			for i,v in pairs(ownedAmbulanceCars) do
-				children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
-			end
-			if ownedAmbulanceCars[1] then
-				cars[i] = {
-					title = 'Owned EMS Vehicles',
-                	description = '',
-                	action = '',
-                	key = true,
-					children = children
-				}	
-			end
-			i = i +1
-			wait = false			
+		for i,v in pairs(ownedAmbulanceCars) do
+			children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
+		end
+		if ownedAmbulanceCars[1] then
+			cars[i] = {
+				title = 'Owned EMS Vehicles',
+                description = '',
+                action = '',
+                key = true,
+				children = children
+			}	
+		end
+		i = i +1
+		wait = false			
 	end, 'mount_zonah', 'cars', currentLoc)
 
 	while wait do
@@ -401,121 +401,6 @@ function OpenTowingGarageMenu()
 
 		exports["np-ui"]:showContextMenu(cars)
 end
--- Start of Mechanic Code
-function OpenMechanicGarageMenu()
-	local elements = {}
-	local NoCars = true
-
-	ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedMechanicCars)
-		if #ownedMechanicCars > 0 then
-			table.insert(elements, {label = _U('cars'), value = 'cars'})
-			NoCars = false
-		end
-	end, 'mechanic', 'cars')
-	Citizen.Wait(500)
-
-	if NoCars then
-		ESX.UI.Menu.CloseAll()
-		ESX.ShowNotification(_U('garage_no_veh'))
-	else
-		ESX.UI.Menu.CloseAll()
-		ESX.UI.Menu.Open('default', GetCurrentResourceName(), 'mechanicgaragemenu', {
-			title = _U('garage_menu'),
-			align = GetConvar('esx_MenuAlign', 'top-left'),
-			elements = elements
-		}, function(data, menu)
-			local action = data.current.value
-
-			if action == 'cars' then
-				local elements = {head = {_U('veh_plate'), _U('veh_name'), _U('veh_loc'), _U('actions')}, rows = {}}
-				ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedMechanicCars)
-					for _,v in pairs(ownedMechanicCars) do
-						local vehStored = _U('veh_loc_unknown')
-						if v.stored then
-							vehStored = _U('veh_loc_garage')
-						else
-							vehStored = _U('veh_loc_impound')
-						end
-
-						table.insert(elements.rows, {data = v, cols = {v.plate, v.vehName, vehStored, '{{' .. _U('spawn') .. '|spawn}} {{' .. _U('rename') .. '|rename}}'}})
-					end
-
-					ESX.UI.Menu.Open('list', GetCurrentResourceName(), 'owned_vehicles_list', elements, function(data2, menu2)
-						local vehVehicle, vehPlate, vehStored, vehFuel = data2.data.vehicle, data2.data.plate, data2.data.stored, data2.data.fuel
-						if data2.value == 'spawn' then
-							if vehStored then
-								if ESX.Game.IsSpawnPointClear(this_Garage.Spawner, 5.0) then
-									SpawnVehicle(vehVehicle, vehPlate, vehFuel)
-									ESX.UI.Menu.CloseAll()
-								else
-									ESX.ShowNotification(_U('spawnpoint_blocked'))
-								end
-							else
-								ESX.ShowNotification(_U('veh_not_here'))
-							end
-						elseif data2.value == 'rename' then
-							if Config.Main.RenameVehs then
-								ESX.UI.Menu.Open('dialog', GetCurrentResourceName(), 'renamevehicle', {
-									title = _U('veh_rename', Config.Main.RenameMin, Config.Main.RenameMax - 1)
-								}, function(data3, menu3)
-									if string.len(data3.value) >= Config.Main.RenameMin and string.len(data3.value) < Config.Main.RenameMax then
-										TriggerServerEvent('esx_advancedgarage:renameVehicle', vehPlate, data3.value)
-										ESX.UI.Menu.CloseAll()
-									else
-										ESX.ShowNotification(_U('veh_rename_empty', Config.Main.RenameMin, Config.Main.RenameMax - 1))
-									end
-								end, function(data3, menu3)
-									menu3.close()
-								end)
-							else
-								ESX.ShowNotification(_U('veh_rename_no'))
-							end
-						end
-					end, function(data2, menu2)
-						menu2.close()
-					end)
-				end, 'mechanic', 'cars')
-			end
-		end, function(data, menu)
-			menu.close()
-		end)
-	end
-end
-
-function StoreOwnedMechanicMenu()
-	local playerPed  = GetPlayerPed(-1)
-
-	if IsPedInAnyVehicle(playerPed,  false) then
-		local playerPed = GetPlayerPed(-1)
-		local coords = GetEntityCoords(playerPed)
-		local vehicle = GetVehiclePedIsIn(playerPed, false)
-		local vehicleProps = ESX.Game.GetVehicleProperties(vehicle)
-		local current = GetPlayersLastVehicle(GetPlayerPed(-1), true)
-		local engineHealth = GetVehicleEngineHealth(current)
-		local plate = vehicleProps.plate
-
-		ESX.TriggerServerCallback('esx_advancedgarage:storeVehicle', function(valid)
-			if valid then
-				if engineHealth < 990 then
-					if Config.Main.DamageMult then
-						local apprasial = math.floor((1000 - engineHealth)/1000*Config.Mechanic.PoundP*Config.Main.MultAmount)
-						RepairVehicle(apprasial, vehicle, vehicleProps)
-					else
-						local apprasial = math.floor((1000 - engineHealth)/1000*Config.Mechanic.PoundP)
-						RepairVehicle(apprasial, vehicle, vehicleProps)
-					end
-				else
-					StoreVehicle(vehicle, vehicleProps)
-				end	
-			else
-				ESX.ShowNotification(_U('cannot_store_vehicle'))
-			end
-		end, vehicleProps)
-	else
-		ESX.ShowNotification(_U('no_vehicle_to_enter'))
-	end
-end
--- End of Mechanic Code
 
 -- Start of Aircraft Code
 function StoreOwnedAircraftMenu()
@@ -732,11 +617,6 @@ AddEventHandler('advancedGarage:OpenGarageCivRadial', function()
 	end
 	
 end)
-RegisterNetEvent('advancedGarage:OpenCarsSuper')
-AddEventHandler('advancedGarage:OpenCarsSuper', function()
-	supers = true
-end)
-
 
 function OpenCarGarageMenu()
 	local cars = {}
@@ -1116,7 +996,6 @@ function doCarDamages(eh, bh, veh, tyres, doors, windows)
         local currentVehicle = (veh and IsEntityAVehicle(veh)) and veh or GetVehiclePedIsIn(PlayerPedId(), false)
         if windows then 
 			for i, w in pairs(windows) do
-				print(w)
 				if w ~= 1 then
 					RemoveVehicleWindow(currentVehicle, i-1)		
 				end
@@ -1318,10 +1197,4 @@ function RefreshJobBlips()
 			end
 		end
 	end
-end
-
-function createMenu(cars, event)
-	local menuData = {}
-	menuData = cars
-	exports["np-ui"]:showContextMenu(menuData)	
 end
