@@ -103,9 +103,12 @@ AddEventHandler("dpemotes:eyeSit", function(msg)
     local radians = (entHeading+270) * 0.0174533
     local toX = (0.35 * math.cos(radians)) + entCoords.x
     local toY = (0.35 * math.sin(radians)) + entCoords.y
+    FreezeEntityPosition(entity, true)
     SetEntityHeading(player, entHeading+180.0)
     SetEntityCoords(player, toX, toY, entCoords.z+aOffset,false, false, false, true)
     OnEmotePlay(DP.Emotes['sitchair'])
+    Citizen.Wait(200)
+    FreezeEntityPosition(entity, false)
   end
 end)
 

@@ -11,6 +11,27 @@ local showLargeCam = false
 local isLargeCamActive = false
 local camTimer = 0
 local vehicle
+local pdm = vector3(-45.784,-1099.54,26.41)
+local tablet1
+local tablet2
+
+Citizen.CreateThread(function()
+  while true do
+          local player = PlayerPedId()
+          local pos = GetEntityCoords(player)
+          if(#(pos - pdm) <= 30.0)then
+              if(not DoesEntityExist(tablet1))then
+                  tablet1 = CreateObjectNoOffset(1723506536, -58.09, -1091.18, 25.42)
+                  SetEntityHeading(tablet1, 74.25)
+              end
+              if(not DoesEntityExist(tablet2))then
+                tablet2 = CreateObjectNoOffset(1723506536, -33.2967, -1104.07, 25.42)
+                SetEntityHeading(tablet2, 248.69)
+            end
+          end
+      Citizen.Wait(500)
+  end
+end)
 
 function CreateShowroomVehicle(showroom, vehicleName)
   print(vehicleName)
@@ -229,23 +250,6 @@ end)
 
 
 Citizen.CreateThread(function()
-  --[[
-  exports['bt-target']:AddBoxZone("showroom", vector3(-49.89, -1088.31, 26.42), 1.5, 1, {
-    name = "hospitalstash",
-    debugPoly = true,
-    heading=250,
-}, {
-    options = {
-        {
-            event = "np-showrooms:enterExperience",
-            icon = "fas fa-car",
-            label = "View Catalog"
-        },
-    },
-    job = {"all"},
-    distance = 1.5
-})
-]]--
 local coffee = {
   1723506536,
 }
