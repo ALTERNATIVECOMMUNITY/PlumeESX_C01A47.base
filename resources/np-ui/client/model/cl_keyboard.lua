@@ -12,6 +12,12 @@ RegisterNUICallback("phone:PayPhoneDial", function(data, cb)
     cb("ok")
 end)
 
+RegisterNUICallback("advancedGarage:takeOut", function(data, cb)
+    TriggerEvent('advancedGarage:takeOut', data.key)
+    SetNuiFocus(false, false)
+    cb("ok")
+end)
+
 RegisterNUICallback("raid_clothes:sendOutfit", function(data, cb)
     SetNuiFocus(false, false)
     exports['np-ui']:openApplication('textbox', {
@@ -26,6 +32,12 @@ RegisterNUICallback("raid_clothes:sendOutfit", function(data, cb)
             },
         },
     })
+    cb("ok")
+end)
+
+RegisterNUICallback("raid_clothes:outfitsDelete", function(data, cb)
+    TriggerEvent('raid_clothes:outfitsDeleteC', data.key)
+    SetNuiFocus(false, false)
     cb("ok")
 end)
 

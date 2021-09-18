@@ -333,6 +333,12 @@ AddEventHandler('raid_clothes:sendOutfit', function(name)
     TriggerServerEvent('raid_clothes:saveOutfit', outfit)
 end)
 
+RegisterNetEvent('raid_clothes:outfitsDeleteC')
+AddEventHandler('raid_clothes:outfitsDeleteC', function(name)
+    TriggerServerEvent('raid_clothes:outfitsDelete', name)
+    exports['mythic_notify']:DoHudText('inform', 'Outfit Removed.')
+end)
+
 RegisterNetEvent("raid_clothes:toggleprop")
 AddEventHandler("raid_clothes:toggleprop", function(type, police)
     local all = {}
@@ -342,14 +348,12 @@ end)
 
 function showOutfitMenu()
     local outfits = {}
+    local outfitsD = {}
     local wait = true
     ESX.TriggerServerCallback('raid_clothes:getOutfits', function(savedOutfits)
         for i,v in pairs(savedOutfits) do
-            if v.name then
-                outfits[i] = {title = i..'. '..v.name, action= 'raid_clothes:outfitsChange', key = v}
-            else
-                outfits[i] = {title = i..'. ', action= 'raid_clothes:outfitsChange', key = v}    
-            end
+            outfits[i] = {title = i..'. '..v.name, action= 'raid_clothes:outfitsChange', key = v}   
+            outfitsD[i] = {title = i..'. '..v.name, action= 'raid_clothes:outfitsDelete', key = v.name}
         end
         wait = false
     end)
@@ -369,6 +373,12 @@ function showOutfitMenu()
                 action = '',
                 key = '',
                 children = outfits
+            },
+            {
+                title = 'Delete Outfit',
+                description = 'Get rid of your old clothes.',
+                action = '',
+                children = outfitsD
             }
     }
     exports["np-ui"]:showContextMenu(menuData)

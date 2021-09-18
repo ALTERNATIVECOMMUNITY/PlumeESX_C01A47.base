@@ -64,22 +64,50 @@ ESX.RegisterServerCallback('raid_clothes:getOutfits', function(source, cb)
 	}, function(outfits)
 		for i ,v in pairs(outfits) do
 			local skin = json.decode(v.skin)
+			skin['name'] = v.name
 			table.insert(savedOutfits, skin)
 		end
 		cb(savedOutfits)
 	end)
 end)
 
+RegisterServerEvent('raid_clothes:outfitsDelete')
+AddEventHandler('raid_clothes:outfitsDelete', function(name)
+	print(name)
+	local xPlayer = ESX.GetPlayerFromId(source)
+	print(xPlayer.identifier)
+	MySQL.Async.execute('DELETE FROM outfits WHERE name = @name AND identifier = @owner', {
+		['@owner'] = xPlayer.identifier,
+		['@name'] = name
+	}, function(rowsChanged)
+		print('deleted outfit')
+	end)	
+end)
+
 RegisterServerEvent('raid_clothes:saveOutfit')
 AddEventHandler('raid_clothes:saveOutfit', function(outfit)
 	print(outfit.model)
 	local xPlayer = ESX.GetPlayerFromId(source)
-	MySQL.Async.execute('INSERT INTO outfits (identifier, skin) VALUES (@owner, @outfit)', {
+	MySQL.Async.execute('INSERT INTO outfits (identifier, skin, name) VALUES (@owner, @outfit, @name)', {
 		['@owner'] = xPlayer.identifier,
-		['@outfit'] = json.encode({name = outfit.name, model = outfit.model, hairColor = outfit.hairColor, headOverlay = outfit.headOverlay, headStructure = outfit.headStructure, drawables = outfit.drawables, props = outfit.props, drawtextures = outfit.drawtextures, proptextures = outfit.proptextures})
+		['@outfit'] = json.encode({model = outfit.model, hairColor = outfit.hairColor, headOverlay = outfit.headOverlay, headStructure = outfit.headStructure, drawables = outfit.drawables, props = outfit.props, drawtextures = outfit.drawtextures, proptextures = outfit.proptextures}),
+		['@name'] = outfit.name
 	}, function(rowsChanged)
 		xPlayer.showNotification('Saved outfit!')
 	end)
 end)
+
+function MySQLAsyncExecute(query)
+    local IsBusy = true
+    local result = nil
+    MySQL.Async.fetchAll(query, {}, function(data)
+        result = data
+        IsBusy = false
+    end)
+    while IsBusy do
+        Citizen.Wait(0)
+    end
+    return result
+end
 
 

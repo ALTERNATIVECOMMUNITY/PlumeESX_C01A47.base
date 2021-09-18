@@ -101,76 +101,55 @@ local function has_value (tab, val)
 end
 
 function OpenAmbulanceGarageMenu()
-	local elements = {}
-	local NoCars, NoShared = true, true
+	local cars = {}
+	local i = 1
+	local wait = true
 
 	ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedAmbulanceCars)
-		if #ownedAmbulanceCars > 0 then
-			NoCars = false
-		end
-	end, 'mount_zonah', 'cars')
+		local children = {}
+			for i,v in pairs(ownedAmbulanceCars) do
+				children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
+			end
+			if ownedAmbulanceCars[1] then
+				cars[i] = {
+					title = 'Owned EMS Vehicles',
+                	description = '',
+                	action = '',
+                	key = true,
+					children = children
+				}	
+			end
+			i = i +1
+			wait = false			
+	end, 'mount_zonah', 'cars', currentLoc)
+
+	while wait do
+		Citizen.Wait(5)
+	end
+	wait = true 
 
 	ESX.TriggerServerCallback('esx_advancedgarage:getSharedVehicles', function(sharedAmbulanceCars)
-		if #sharedAmbulanceCars > 0 then
-			NoShared= false
+		for i,v in pairs(sharedAmbulanceCars) do
+			children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
 		end
-	end, 'mount_zonah', 'cars')
-	Citizen.Wait(500)
-	if NoCars and NoShared then
-		ESX.UI.Menu.CloseAll()
-		ESX.ShowNotification(_U('garage_no_veh'))
-		print('triggered')
-	else
-		ESX.UI.Menu.CloseAll()
-		
-				totalCars = 0
-				vehToSpawn = {}
-				exports["br-menu"]:SetTitle("Ambulance Garage")
-				local elements = {head = {_U('veh_plate'), _U('veh_name'), _U('veh_loc'), _U('actions')}, rows = {}}
-				ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedPoliceCars)
-					if not displayed then
-						for _,v in pairs(ownedPoliceCars) do
-							local vehStored = _U('veh_loc_unknown')
-							if v.stored then
-								vehStored = _U('veh_loc_garage')
-							else
-								vehStored = _U('veh_loc_impound')
-							end
-							table.insert(elements.rows, {data = v, cols = {v.plate, v.vehName, vehStored, '{{' .. _U('spawn') .. '|spawn}} {{' .. _U('rename') .. '|rename}}'}})
-							local a= {v.plate, v.vehName, vehStored, v.fuel, totalCars}
-							vehToSpawn[totalCars] = v
-							exports["br-menu"]:AddButton(v.plate , v.vehName ,'advancedGarage:SpawnCar' , a , 'owned')	
-							totalCars = totalCars + 1
-						end
-					end
-					
-				end, 'mount_zonah', 'cars', currentLoc)
-				ESX.TriggerServerCallback('esx_advancedgarage:getSharedVehicles', function(sharedPoliceCars)
-					if not displayed then
-						for _,v in pairs(sharedPoliceCars) do
-							local vehStored = _U('veh_loc_unknown')
-							if v.stored then
-								vehStored = _U('veh_loc_garage')
-							else
-								vehStored = _U('veh_loc_impound')
-							end
-							table.insert(elements.rows, {data = v, cols = {v.plate, v.vehName, vehStored, '{{' .. _U('spawn') .. '|spawn}} {{' .. _U('rename') .. '|rename}}'}})
-							local a= {v.plate, v.vehName, vehStored, v.fuel, totalCars}
-							vehToSpawn[totalCars] = v
-							exports["br-menu"]:AddButton(v.plate , v.vehName ,'advancedGarage:SpawnCar' , a , 'shared')	
-							totalCars = totalCars + 1
-						end
-					end
-					displayed = true
-				end, 'mount_zonah', 'cars')
+		if sharedAmbulanceCars[1] then
+			cars[i] = {
+				title = 'Shared EMS Vehicles',
+				description = '',
+				action = '',
+				key = true,
+				children = children
+			}	
+		end
+		i = i +1
+		wait = false			
+	end, 'mount_zonah', 'cars')	
 
-				if not noCars then 
-					exports["br-menu"]:SubMenu('Owned Vehicles' , '' , 'owned')
-				end
-				exports["br-menu"]:SubMenu('Shared Vehicles' , '' , 'shared')
-				
-			
+	while wait do
+		Citizen.Wait(5)
 	end
+	 
+	exports["np-ui"]:showContextMenu(cars)
 end	
 
 function StoreOwnedAmbulanceMenu()
@@ -246,6 +225,15 @@ AddEventHandler('advancedGarage:SpawnCar', function(veh)
 	end	
 end)
 
+RegisterNetEvent('advancedGarage:takeOut')
+AddEventHandler('advancedGarage:takeOut', function(v)
+	if v.stored then							
+		SpawnVehicle(v.vehicle, v.plate, v.fuel,locToSpawn, headingToSpawn)		
+	else
+		exports['mythic_notify']:DoHudText('error', 'Car is already out!')
+	end	
+end)
+
 RegisterNetEvent('advancedGarage:SpawnCar2')
 AddEventHandler('advancedGarage:SpawnCar2', function(veh)
 	displayed = false
@@ -273,75 +261,58 @@ end
 
 -- Start of Police Code heavily edited: Reworked to use br-menu, rework to configure for shared vehicles
 function OpenPoliceGarageMenu()
-	local elements = {}
-	local NoCars, NoShared = true, true
-
-	ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedPoliceCars)
-		if #ownedPoliceCars > 0 then
-			NoCars = false
-			print('hasPoliceCar')
-		end
-	end, 'police', 'cars')
-
-	ESX.TriggerServerCallback('esx_advancedgarage:getSharedVehicles', function(sharedPoliceCars)
-		if #sharedPoliceCars > 0 then
-			NoShared= false
-		end
-	end, 'police', 'cars')
-	Citizen.Wait(500)
-	if NoCars and NoShared then
-		ESX.UI.Menu.CloseAll()
-		ESX.ShowNotification(_U('garage_no_veh'))
-	else
-		ESX.UI.Menu.CloseAll()
-			if checkPDGarage() then
-				totalCars = 0
-				vehToSpawn = {}
-				exports["br-menu"]:SetTitle("Police Garage")
-				local elements = {head = {_U('veh_plate'), _U('veh_name'), _U('veh_loc'), _U('actions')}, rows = {}}
-				ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedPoliceCars)
-					if not displayed then
-						for _,v in pairs(ownedPoliceCars) do
-							local vehStored = _U('veh_loc_unknown')
-							if v.stored then
-								vehStored = _U('veh_loc_garage')
-							else
-								vehStored = _U('veh_loc_impound')
-							end
-							table.insert(elements.rows, {data = v, cols = {v.plate, v.vehName, vehStored, '{{' .. _U('spawn') .. '|spawn}} {{' .. _U('rename') .. '|rename}}'}})
-							local a= {v.plate, v.vehName, vehStored, v.fuel, totalCars}
-							vehToSpawn[totalCars] = v
-							exports["br-menu"]:AddButton(v.plate , v.vehName ,'advancedGarage:SpawnCar' , a , 'owned')	
-							totalCars = totalCars + 1
-						end
-					end
-					
-				end, 'police', 'cars', currentLoc)
-				ESX.TriggerServerCallback('esx_advancedgarage:getSharedVehicles', function(sharedPoliceCars)
-					if not displayed then
-						for _,v in pairs(sharedPoliceCars) do
-							local vehStored = _U('veh_loc_unknown')
-							if v.stored then
-								vehStored = _U('veh_loc_garage')
-							else
-								vehStored = _U('veh_loc_impound')
-							end
-							table.insert(elements.rows, {data = v, cols = {v.plate, v.vehName, vehStored, '{{' .. _U('spawn') .. '|spawn}} {{' .. _U('rename') .. '|rename}}'}})
-							local a= {v.plate, v.vehName, vehStored, v.fuel, totalCars}
-							vehToSpawn[totalCars] = v
-							exports["br-menu"]:AddButton(v.plate , v.vehName ,'advancedGarage:SpawnCar' , a , 'shared')	
-							totalCars = totalCars + 1
-						end
-					end
-					displayed = true
-				end, 'police', 'cars')
-
-				if not noCars then 
-					exports["br-menu"]:SubMenu('Owned Vehicles' , '' , 'owned')
-				end
-				exports["br-menu"]:SubMenu('Shared Vehicles' , '' , 'shared')	
+	local cars = {}
+	local i = 1
+	local wait = true
+	if checkPDGarage() then
+		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedPoliceCars)
+			local children = {}
+			for i,v in pairs(ownedPoliceCars) do
+				children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
 			end
+			if ownedPoliceCars[1] then
+				cars[i] = {
+					title = 'Owned Police Cars',
+                	description = '',
+                	action = '',
+                	key = true,
+					children = children
+				}	
+			end
+			i = i +1
+			wait = false		
+		end, 'police', 'cars', currentLoc)
+
+		while wait do
+			Citizen.Wait(5)
+		end
+		wait = true 
+
+		ESX.TriggerServerCallback('esx_advancedgarage:getSharedVehicles', function(sharedPoliceCars)
+			local children = {}
+			for i,v in pairs(sharedPoliceCars) do
+				children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
+			end
+			if sharedPoliceCars[1] then
+				cars[i] = {
+					title = 'Shared Police Cars',
+                	description = '',
+                	action = '',
+                	key = true,
+					children = children
+				}	
+			end
+			i = i +1
+			wait = false		
+		end, 'police', 'cars')
+		
+		while wait do
+			Citizen.Wait(5)
+		end
+		
+		exports["np-ui"]:showContextMenu(cars)
 	end
+	
 end				
 			
 --added: Triggers Radial menu Police garage
@@ -380,73 +351,55 @@ end
 -- End of Police Code
 -- Start of towing code
 function OpenTowingGarageMenu()
-	local elements = {}
-	local NoCars, NoShared = true, true
-
-	ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedTowCars)
-		if #ownedTowCars > 0 then
-			NoCars = false
+	local cars = {}
+	local i = 1
+	local wait = true
+		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedTowCars)
+			local children = {}
+			for i,v in pairs(ownedSupers) do
+				children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
+			end
+			if ownedTowCars[1] then
+				cars[i] = {
+					title = 'Owned Tow Vehicles',
+                	description = '',
+                	action = '',
+                	key = true,
+					children = children
+				}	
+			end
+			i = i +1
+			wait = false		
+		end, 'towing', 'trucks', currentLoc)
+		
+		while wait do
+			Citizen.Wait(5)
 		end
-	end, 'towing', 'trucks')
+		wait = true 
 
-	ESX.TriggerServerCallback('esx_advancedgarage:getSharedVehicles', function(sharedTowCars)
-		if #sharedPoliceCars > 0 then
-			NoShared= false
+		ESX.TriggerServerCallback('esx_advancedgarage:getSharedVehicles', function(sharedTowCars)
+			local children = {}
+			for i,v in pairs(sharedTowCars) do
+				children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
+			end
+			if sharedTowCars[1] then
+				cars[i] = {
+					title = 'Shared Tow',
+                	description = '',
+                	action = '',
+                	key = true,
+					children = children
+				}	
+			end
+			i = i +1
+			wait = false
+		end, 'towing', 'trucks')	
+
+		while wait do
+			Citizen.Wait(5)
 		end
-	end, 'towing', 'trucks')
-	Citizen.Wait(500)
-	if NoCars and NoShared then
-		ESX.UI.Menu.CloseAll()
-		ESX.ShowNotification(_U('garage_no_veh'))
-	else
-		ESX.UI.Menu.CloseAll()
-			
-				totalCars = 0
-				vehToSpawn = {}
-				exports["br-menu"]:SetTitle("Elite Towing Garage")
-				local elements = {head = {_U('veh_plate'), _U('veh_name'), _U('veh_loc'), _U('actions')}, rows = {}}
-				ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedTowCars)
-					if not displayed then
-						for _,v in pairs(ownedTowCars) do
-							local vehStored = _U('veh_loc_unknown')
-							if v.stored then
-								vehStored = _U('veh_loc_garage')
-							else
-								vehStored = _U('veh_loc_impound')
-							end
-							table.insert(elements.rows, {data = v, cols = {v.plate, v.vehName, vehStored, '{{' .. _U('spawn') .. '|spawn}} {{' .. _U('rename') .. '|rename}}'}})
-							local a= {v.plate, v.vehName, vehStored, v.fuel, totalCars}
-							vehToSpawn[totalCars] = v
-							exports["br-menu"]:AddButton(v.plate , v.vehName ,'advancedGarage:SpawnCar' , a , 'owned')	
-							totalCars = totalCars + 1
-						end
-					end
-					
-				end, 'towing', 'trucks', currentLoc)
-				ESX.TriggerServerCallback('esx_advancedgarage:getSharedVehicles', function(sharedPoliceCars)
-					if not displayed then
-						for _,v in pairs(sharedPoliceCars) do
-							local vehStored = _U('veh_loc_unknown')
-							if v.stored then
-								vehStored = _U('veh_loc_garage')
-							else
-								vehStored = _U('veh_loc_impound')
-							end
-							table.insert(elements.rows, {data = v, cols = {v.plate, v.vehName, vehStored, '{{' .. _U('spawn') .. '|spawn}} {{' .. _U('rename') .. '|rename}}'}})
-							local a= {v.plate, v.vehName, vehStored, v.fuel, totalCars}
-							vehToSpawn[totalCars] = v
-							exports["br-menu"]:AddButton(v.plate , v.vehName ,'advancedGarage:SpawnCar' , a , 'shared')	
-							totalCars = totalCars + 1
-						end
-					end
-					displayed = true
-				end, 'towing', 'trucks')
 
-				if not noCars then 
-					exports["br-menu"]:SubMenu('Owned Vehicles' , '' , 'owned')
-				end
-				exports["br-menu"]:SubMenu('Shared Vehicles' , '' , 'shared')	
-	end
+		exports["np-ui"]:showContextMenu(cars)
 end
 -- Start of Mechanic Code
 function OpenMechanicGarageMenu()
@@ -784,304 +737,290 @@ AddEventHandler('advancedGarage:OpenCarsSuper', function()
 	supers = true
 end)
 
--- Start of Car Code: Heavily edited to allow use of radial menu w/ polyzones
-function OpenCarGarageMenu()
-	local elements = {}
-	local NoCycles, NoCompacts, NoCoupes, NoMotos, NoMuscles, NoOffs, NoSedans, NoSports, NoSportCs, NoSupers, NoSUVs, NoVans = true, true, true, true, true, true, true, true, true, true, true, true
 
-	if Config.Main.TruckShop then
-		table.insert(elements, {label = _U('large_trucks'), value = 'large_trucks'})
-	end
-	
-	exports["br-menu"]:SetTitle("Garage")
-	
-		totalCars = 0
-		local elements = {head = {_U('veh_plate'), _U('veh_name'), _U('veh_loc'), _U('actions')}, rows = {}}
-		
+function OpenCarGarageMenu()
+	local cars = {}
+	local i = 1
+	local wait = true
 		--supers
 		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedSupers)
-			for _,v in pairs(ownedSupers) do
-					local vehStored = _U('veh_loc_unknown')
-					if v.stored then
-						vehStored = _U('veh_loc_garage')
-					else
-						vehStored = _U('veh_loc_impound')
-					end
-					vehToSpawn[totalCars] = v
-					local a = {v, v.plate, v.fuel, vehStored, totalCars}
-					
-					exports["br-menu"]:AddButton(v.vehName,'Plate: '..v.plate..' 	Fuel: '..v.fuel..'%', 'advancedGarage:SpawnCar2' , a, "menuSupers")	
-					totalCars = totalCars +1
+			local children = {}
+			for i,v in pairs(ownedSupers) do
+				children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
 			end
+			if ownedSupers[1] then
+				cars[i] = {
+					title = 'Supers',
+                	description = '',
+                	action = '',
+                	key = true,
+					children = children
+				}	
+			end
+			i = i +1
+			wait = false
 		end, 'civ', 'supers', currentLoc)
+		while wait do
+			Citizen.Wait(5)
+		end
+		wait = true 
 		
-		--muscles
 		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedMuscles)
-			for _,v in pairs(ownedMuscles) do
-					local vehStored = _U('veh_loc_unknown')
-					if v.stored then
-						vehStored = _U('veh_loc_garage')
-					else
-						vehStored = _U('veh_loc_impound')
-					end
-					vehToSpawn[totalCars] = v
-					local a = {v, v.plate, v.fuel, vehStored, totalCars}
-					exports["br-menu"]:AddButton(v.vehName,'Plate: '..v.plate..' 	Fuel: '..v.fuel..'%','advancedGarage:SpawnCar2' , a, "menuMuscles")	
-					totalCars = totalCars+1
+			local children = {}
+			for i,v in pairs(ownedMuscles) do
+				children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
 			end
+			if ownedMuscles[1] then
+				cars[i] = {
+					title = 'Muscles',
+                	description = '',
+                	action = '',
+                	key = true,
+					children = children
+				}	
+			end
+			i = i +1
+			wait = false
 		end, 'civ', 'muscles', currentLoc)
+
+		while wait do
+			Citizen.Wait(5)
+		end
+		wait = true 
 	
 		--cycles
 		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedCycles)
-			for _,v in pairs(ownedCycles) do
-					local vehStored = _U('veh_loc_unknown')
-					if v.stored then
-						vehStored = _U('veh_loc_garage')
-					else
-						vehStored = _U('veh_loc_impound')
-					end
-					vehToSpawn[totalCars] = v
-					local a = {v, v.plate, v.fuel, vehStored, totalCars}
-					exports["br-menu"]:AddButton(v.vehName,'Plate: '..v.plate..' 	Fuel: '..v.fuel..'%', 'advancedGarage:SpawnCar2' , a, "menuCycles")	
-					totalCars = totalCars+1
+			local children = {}
+			for i,v in pairs(ownedCycles) do
+				children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
 			end
+			if ownedCycles[1] then
+				cars[i] = {
+					title = 'Cycles',
+                	description = '',
+                	action = '',
+                	key = true,
+					children = children
+				}	
+			end
+			i = i +1
+			wait = false
 		end, 'civ', 'cycles', currentLoc)
-		
+
+		while wait do
+			Citizen.Wait(5)
+		end
+		wait = true 
+
 		--compacts
 		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedCompacts)
-			for _,v in pairs(ownedCompacts) do
-					local vehStored = _U('veh_loc_unknown')
-					if v.stored then
-						vehStored = _U('veh_loc_garage')
-					else
-						vehStored = _U('veh_loc_impound')
-					end
-					vehToSpawn[totalCars] = v
-					local a = {v, v.plate, v.fuel, vehStored, totalCars}
-					exports["br-menu"]:AddButton(v.vehName,'Plate: '..v.plate..' 	Fuel: '..v.fuel..'%', 'advancedGarage:SpawnCar2' , a, "menuCompacts")	
-					totalCars = totalCars+1
+			local children = {}
+			for i,v in pairs(ownedCompacts) do
+				children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
 			end
+			if ownedCompacts[1] then
+				cars[i] = {
+					title = 'Compacts',
+                	description = '',
+                	action = '',
+                	key = true,
+					children = children
+				}	
+			end
+			i = i +1
+			wait = false
 		end, 'civ', 'compacts', currentLoc)
+
+		while wait do
+			Citizen.Wait(5)
+		end
+		wait = true 
+
 		--coupes
 		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedCoupes)
-			for _,v in pairs(ownedCoupes) do
-					local vehStored = _U('veh_loc_unknown')
-					if v.stored then
-						vehStored = _U('veh_loc_garage')
-					else
-						vehStored = _U('veh_loc_impound')
-					end
-					vehToSpawn[totalCars] = v
-					local a = {v, v.plate, v.fuel, vehStored, totalCars}
-					exports["br-menu"]:AddButton(v.vehName,'Plate: '..v.plate..' 	Fuel: '..v.fuel..'%','advancedGarage:SpawnCar2' , a, "menuCoupes")	
-					totalCars = totalCars+1
+			local children = {}
+			for i,v in pairs(ownedCoupes) do
+				children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
 			end
+			if ownedCoupes[1] then
+				cars[i] = {
+					title = 'Coupes',
+                	description = '',
+                	action = '',
+                	key = true,
+					children = children
+				}	
+			end
+			i = i +1
+			wait = false
 		end, 'civ', 'coupes', currentLoc)
+
+		while wait do
+			Citizen.Wait(5)
+		end
+		wait = true 
+
 		--motorcycles
 		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedMotorcycles)
-			for _,v in pairs(ownedMotorcycles) do
-					local vehStored = _U('veh_loc_unknown')
-					if v.stored then
-						vehStored = _U('veh_loc_garage')
-					else
-						vehStored = _U('veh_loc_impound')
-					end
-					vehToSpawn[totalCars] = v
-					local a = {v, v.plate, v.fuel, vehStored, totalCars}
-					exports["br-menu"]:AddButton(v.vehName,'Plate: '..v.plate..' 	Fuel: '..v.fuel..'%','advancedGarage:SpawnCar2' , a, "menuMotorcycles")	
-					totalCars = totalCars+1
+			local children = {}
+			for i,v in pairs(ownedMotorcycles) do
+				children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
 			end
+			if ownedMotorcycles[1] then
+				cars[i] = {
+					title = 'Motorcycles',
+                	description = '',
+                	action = '',
+                	key = true,
+					children = children
+				}	
+			end
+			i = i +1
+			wait = false
 		end, 'civ', 'motorcycles', currentLoc)
+
+		while wait do
+			Citizen.Wait(5)
+		end
+		wait = true 
+
 		--offroads
 		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedOffRoads)
-			for _,v in pairs(ownedOffRoads) do
-					local vehStored = _U('veh_loc_unknown')
-					if v.stored then
-						vehStored = _U('veh_loc_garage')
-					else
-						vehStored = _U('veh_loc_impound')
-					end
-					vehToSpawn[totalCars] = v
-					local a = {v, v.plate, v.fuel, vehStored, totalCars}
-					exports["br-menu"]:AddButton(v.vehName,'Plate: '..v.plate..' 	Fuel: '..v.fuel..'%','advancedGarage:SpawnCar2' , a, "menuOffRoads")	
-					totalCars = totalCars+1
+			local children = {}
+			for i,v in pairs(ownedOffRoads) do
+				children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
 			end
+			if ownedOffRoads[1] then
+				cars[i] = {
+					title = 'OffRoads',
+                	description = '',
+                	action = '',
+                	key = true,
+					children = children
+				}	
+			end
+			i = i +1
+			wait = false
 		end, 'civ', 'offroads', currentLoc)
+
+		while wait do
+			Citizen.Wait(5)
+		end
+		wait = true 
+
 		--sedans
 		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedSedans)
-			for _,v in pairs(ownedSedans) do
-					local vehStored = _U('veh_loc_unknown')
-					if v.stored then
-						vehStored = _U('veh_loc_garage')
-					else
-						vehStored = _U('veh_loc_impound')
-					end
-					vehToSpawn[totalCars] = v
-					local a = {v, v.plate, v.fuel, vehStored, totalCars}
-					exports["br-menu"]:AddButton(v.vehName,'Plate: '..v.plate..' 	Fuel: '..v.fuel..'%','advancedGarage:SpawnCar2' , a, "menuSedans")	
-					totalCars = totalCars+1
+			local children = {}
+			for i,v in pairs(ownedSedans) do
+				children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
 			end
+			if ownedSedans[1] then
+				cars[i] = {
+					title = 'Sedans',
+                	description = '',
+                	action = '',
+                	key = true,
+					children = children
+				}	
+			end
+			i = i +1
+			wait = false
 		end, 'civ', 'sedans', currentLoc)
+
+		while wait do
+			Citizen.Wait(5)
+		end
+		wait = true 
+
 		--sports
 		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedSports)
-			for _,v in pairs(ownedSports) do
-					local vehStored = _U('veh_loc_unknown')
-					if v.stored then
-						vehStored = _U('veh_loc_garage')
-					else
-						vehStored = _U('veh_loc_impound')
-					end
-					vehToSpawn[totalCars] = v
-					local a = {v, v.plate, v.fuel, vehStored, totalCars}
-					exports["br-menu"]:AddButton(v.vehName,'Plate: '..v.plate..' 	Fuel: '..v.fuel..'%','advancedGarage:SpawnCar2' , a, "menuSports")	
-					totalCars = totalCars+1	
+			local children = {}
+			for i,v in pairs(ownedSports) do
+				children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
 			end
+			if ownedSports[1] then
+				cars[i] = {
+					title = 'Sports',
+                	description = '',
+                	action = '',
+                	key = true,
+					children = children
+				}	
+			end
+			i = i +1
+			wait = false
 		end, 'civ', 'sports', currentLoc)
+
+		while wait do
+			Citizen.Wait(5)
+		end
+		wait = true 
+
 		--sportsclassics
 		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedSportsClassics)
-			for _,v in pairs(ownedSportsClassics) do
-					local vehStored = _U('veh_loc_unknown')
-					if v.stored then
-						vehStored = _U('veh_loc_garage')
-					else
-						vehStored = _U('veh_loc_impound')
-					end
-					vehToSpawn[totalCars] = v
-					local a = {v, v.plate, v.fuel, vehStored, totalCars}
-					exports["br-menu"]:AddButton(v.vehName,'Plate: '..v.plate..' 	Fuel: '..v.fuel..'%','advancedGarage:SpawnCar2' , a, "menuSportsClassics")	
-					totalCars = totalCars+1	
+			local children = {}
+			for i,v in pairs(ownedSportsClassics) do
+				children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
 			end
+			if ownedSportsClassics[1] then
+				cars[i] = {
+					title = 'Sports Classics',
+                	description = '',
+                	action = '',
+                	key = true,
+					children = children
+				}	
+			end
+			i = i +1
+			wait = false
 		end, 'civ', 'sportsclassics', currentLoc)
 		--suvs
 		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedSUVs)
-			for _,v in pairs(ownedSUVs) do
-					local vehStored = _U('veh_loc_unknown')
-					if v.stored then
-						vehStored = _U('veh_loc_garage')
-					else
-						vehStored = _U('veh_loc_impound')
-					end
-					table.insert(elements.rows, {data = v, cols = {v.vehName, v.plate, vehStored, '{{' .. _U('spawn') .. '|spawn}} {{' .. _U('rename') .. '|rename}}'}})
-					vehToSpawn[totalCars] = v
-					local a = {v, v.plate, v.fuel, vehStored, totalCars}
-					exports["br-menu"]:AddButton(v.vehName,'Plate: '..v.plate..' 	Fuel: '..v.fuel..'%','advancedGarage:SpawnCar2' , a, "menuSUVs")	
-					totalCars = totalCars+1
+			local children = {}
+			for i,v in pairs(ownedSUVs) do
+				children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
 			end
+			if ownedSUVs[1] then
+				cars[i] = {
+					title = 'SUVs',
+                	description = '',
+                	action = '',
+                	key = true,
+					children = children
+				}	
+			end
+			i = i +1
+			wait = false
 		end, 'civ', 'suvs', currentLoc)
+
+		while wait do
+			Citizen.Wait(5)
+		end
+		wait = true 
+
 		--vans
 		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedVans)
-			for _,v in pairs(ownedVans) do
-					local vehStored = _U('veh_loc_unknown')
-					if v.stored then
-						vehStored = _U('veh_loc_garage')
-					else
-						vehStored = _U('veh_loc_impound')
-					end
-					table.insert(elements.rows, {data = v, cols = { v.vehName, v.plate, vehStored, '{{' .. _U('spawn') .. '|spawn}} {{' .. _U('rename') .. '|rename}}'}})
-					vehToSpawn[totalCars] = v
-					local a = {v, v.plate, v.fuel, vehStored, totalCars}
-					exports["br-menu"]:AddButton(v.vehName,'Plate: '..v.plate..' 	Fuel: '..v.fuel..'%','advancedGarage:SpawnCar2' , a, "menuVans")	
-					totalCars = totalCars+1
+			local children = {}
+			for i,v in pairs(ownedVans) do
+				children[i] = {title =v.vehName..', Plate: '..v.plate..', Fuel: '..v.fuel..'%', action = 'advancedGarage:takeOut', key = v}	
 			end
+			if ownedVans[1] then
+				cars[i] = {
+					title = 'Vans',
+                	description = '',
+                	action = '',
+                	key = true,
+					children = children
+				}	
+			end
+			i = i +1
+			wait = false
 		end, 'civ', 'vans', currentLoc)
-		
-		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedCycles)
-			if #ownedCycles > 0 then
-				table.insert(elements, {label = _U('cycles'), value = 'cycles'})
-				exports["br-menu"]:SubMenu('Cycles' , '' , 'menuCycles')
-				NoCycles = false
-			end
-		end, 'civ', 'cycles', currentLoc)
-	
-		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedCompacts)
-			if #ownedCompacts > 0 then
-				table.insert(elements, {label = _U('compacts'), value = 'compacts'})
-				exports["br-menu"]:SubMenu('Compacts' , '', 'menuCompacts')
-				NoCompacts = false
-			end
-		end, 'civ', 'compacts', currentLoc)
-	
-		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedCoupes)
-			if #ownedCoupes > 0 then
-				table.insert(elements, {label = _U('coupes'), value = 'coupes'})
-				exports["br-menu"]:SubMenu('Coupes' , '' , 'menuCoupes')
-				NoCoupes = false
-			end
-		end, 'civ', 'coupes', currentLoc)
-	
-		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedMotorcycles)
-			if #ownedMotorcycles > 0 then
-				table.insert(elements, {label = _U('motorcycles'), value = 'motorcycles'})
-				exports["br-menu"]:SubMenu('Motorcyles' , '' , 'menuMotorcycles')
-				NoMotos = false
-			end
-		end, 'civ', 'motorcycles', currentLoc)
-	
-		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedMuscles)
-			if #ownedMuscles > 0 then
-				table.insert(elements, {label = _U('muscles'), value = 'muscles'})
-				exports["br-menu"]:SubMenu('Muscles' , '', 'menuMuscles')
-				NoMuscles = false
-			end
-		end, 'civ', 'muscles', currentLoc)
-	
-		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedOffRoads)
-			if #ownedOffRoads > 0 then
-				table.insert(elements, {label = _U('offroads'), value = 'offroads'})
-				exports["br-menu"]:SubMenu('Offroads' , '' , 'menuOffRoads')
-				NoOffs = false
-			end
-		end, 'civ', 'offroads', currentLoc)
-	
-		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedSedans)
-			if #ownedSedans > 0 then
-				table.insert(elements, {label = _U('sedans'), value = 'sedans'})
-				exports["br-menu"]:SubMenu('Sedans' ,'' , 'menuSedans')
-				NoSedans = false
-			end
-		end, 'civ', 'sedans', currentLoc)
-	
-		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedSports)
-			if #ownedSports > 0 then
-				table.insert(elements, {label = _U('sports'), value = 'sports'})
-				exports["br-menu"]:SubMenu('Sports' , '' , 'menuSports')
-				NoSports = false
-			end
-		end, 'civ', 'sports', currentLoc)
-	
-		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedSportsClassics)
-			if #ownedSportsClassics > 0 then
-				table.insert(elements, {label = _U('sportsclassics'), value = 'sportsclassics'})
-				exports["br-menu"]:SubMenu('Sports Classics' , '' , 'menuSportsClassics')
-				NoSportCs = false
-			end
-		end, 'civ', 'sportsclassics', currentLoc)
-	
-		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedSupers)
-			if #ownedSupers > 0 then
-				table.insert(elements, {label = _U('supers'), value = 'supers'})
-				exports["br-menu"]:SubMenu('Supers' , '' , "menuSupers")
-				NoSupers = false
-			end
-		end, 'civ', 'supers', currentLoc)
-	
-		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedSUVs)
-			if #ownedSUVs > 0 then
-				table.insert(elements, {label = _U('suvs'), value = 'suvs'})
-				exports["br-menu"]:SubMenu('SUV' , '' , 'menuSUVs')
-				NoSUVs = false
-			end
-		end, 'civ', 'suvs', currentLoc)
-	
-		ESX.TriggerServerCallback('esx_advancedgarage:getOwnedVehicles', function(ownedVans)
-			if #ownedVans > 0 then
-				table.insert(elements, {label = _U('vans'), value = 'vans'})
-				exports["br-menu"]:SubMenu('Vans' , '' , 'menuVans')
-				NoVans = false
-			end
-		end, 'civ', 'vans', currentLoc)
-		Citizen.Wait(1000)
-	
+
+		while wait do
+			Citizen.Wait(5)
+		end 
+		exports["np-ui"]:showContextMenu(cars)	
 end
 
 function StoreOwnedCarMenu()
@@ -1139,6 +1078,7 @@ function StoreVehicle(vehicle, vehicleProps, location)
 end
 
 function SpawnVehicle(vehicle, plate, fuel, vector, heading)
+	print(vehicle)
 	if vector ~= nil then
 		ESX.Game.SpawnVehicle(vehicle.model, vector, heading, function(callback_vehicle)
 			ESX.Game.SetVehicleProperties(callback_vehicle, vehicle)
@@ -1378,4 +1318,10 @@ function RefreshJobBlips()
 			end
 		end
 	end
+end
+
+function createMenu(cars, event)
+	local menuData = {}
+	menuData = cars
+	exports["np-ui"]:showContextMenu(menuData)	
 end
