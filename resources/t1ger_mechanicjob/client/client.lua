@@ -130,12 +130,12 @@ function MechShopManageMenu(id,val)
 				local shopName = tostring(data2.value)
 				ESX.TriggerServerCallback('t1ger_mechanicjob:renameMechShop', function(renamed)
 					if renamed then
-						ShowNotifyESX((Lang['mech_shop_renamed']):format(shopName))
+						exports['mythic_notify']:DoHudText('inform', (Lang['mech_shop_renamed']):format(shopName))
 						TriggerServerEvent('t1ger_mechanicjob:fetchMechShops')
 						menu.close()
 						bossMenu = nil
 					else
-						ShowNotifyESX(Lang['not_your_mech_shop'])
+						exports['mythic_notify']:DoHudText('error', Lang['not_your_mech_shop'])
 						menu.close()
 						bossMenu = nil
 					end
@@ -307,7 +307,7 @@ function OpenEmployeeListMenu(id,val)
 				EmployeesMainMenu(id,val)
 			end)
 		else
-			ShowNotifyESX(Lang['no_employees_hired'])
+			exports['mythic_notify']:DoHudText('error', Lang['no_employees_hired'])
 		end
 
 	end, id)
@@ -370,9 +370,9 @@ function SellMechShopMenu(id,val)
 			ESX.TriggerServerCallback('t1ger_mechanicjob:sellMechShop', function(sold)
 				if sold then
 					TriggerServerEvent('t1ger_mechanicjob:fetchMechShops')
-					ShowNotifyESX((Lang['mech_shop_sold']):format(math.floor(sellPrice)))
+					exports['mythic_notify']:DoHudText('success', (Lang['mech_shop_sold']):format(math.floor(sellPrice)))
 				else
-					ShowNotifyESX(Lang['not_your_mech_shop'])
+					exports['mythic_notify']:DoHudText('error', Lang['not_your_mech_shop'])
 				end
 			end, id, val, math.floor(sellPrice))
 			menu.close()
@@ -394,11 +394,11 @@ AddEventHandler('t1ger_mechanicjob:buyMenu', function(data)
 		end
 		ESX.TriggerServerCallback('t1ger_mechanicjob:buyMechShop', function(purchased)
 			if purchased then
-				ShowNotifyESX((Lang['mech_shop_bought']):format(math.floor(data.val.price)))
+				exports['mythic_notify']:DoHudText('success', (Lang['mech_shop_bought']):format(math.floor(data.val.price)))
 				TriggerServerEvent('t1ger_mechanicjob:fetchMechShops')
 				bossMenu = nil
 			else
-				ShowNotifyESX(Lang['not_enough_money'])
+				exports['mythic_notify']:DoHudText('error', Lang['not_enough_money'])
 				bossMenu = nil
 			end
 		end, data.id, data.val, name)
@@ -501,7 +501,7 @@ function storageMenuFunction(k,v,distToStorage)
 						storageMenu = v
 						MechShopStorageMenu(k,v)
 					else
-						ShowNotifyESX(Lang['no_access'])
+						exports['mythic_notify']:DoHudText('error', Lang['no_access'])
 					end
 				end, k)
 			end
@@ -661,7 +661,7 @@ function workbenchMenuFunction(k,v,distToWorkbench)
 						workbenchMenu = v
 						MechShopWorkbenchMenu(k,v)
 					else
-						ShowNotifyESX(Lang['no_access'])
+						exports['mythic_notify']:DoHudText('error', Lang['no_access'])
 					end
 				end, k)
 			end
@@ -856,7 +856,7 @@ Citizen.CreateThread(function()
 											SetEntityCoordsNoOffset(v.currentVeh, v.pos[1], v.pos[2], v.pos[3], 1, 0, 0, 1)
 											Wait(100)
 										else
-											ShowNotifyESX(Lang['lift_cannot_go_higher'])
+											exports['mythic_notify']:DoHudText('error', Lang['lift_cannot_go_higher'])
 										end
 									elseif IsControlJustPressed(0, 173) then 
 										if v.pos[3] > v.minValue then
@@ -864,7 +864,7 @@ Citizen.CreateThread(function()
 											SetEntityCoordsNoOffset(v.currentVeh, v.pos[1], v.pos[2], v.pos[3], 1, 0, 0, 1)
 											Wait(100)
 										else
-											ShowNotifyESX(Lang['lift_cannot_go_lower'])
+											exports['mythic_notify']:DoHudText('error', Lang['lift_cannot_go_lower'])
 										end
 									end
 								else
@@ -1176,11 +1176,11 @@ function RepairVehicleEngine()
 										SetVehicleEngineHealth(vehicle, 1000.0)
 										ClearPedTasks(player)
 									else
-										ShowNotifyESX(Lang['need_more_materials'])
+										exports['mythic_notify']:DoHudText('error', Lang['need_more_materials'])
 									end
 								end, plate, "engine", engineMaterials, 10.0, engineAddVal, vehOnLift)
 							else
-								ShowNotifyESX("Engine is fully functional")
+								exports['mythic_notify']:DoHudText('error', "Engine is fully functional")
 							end
 							break
 						end
@@ -1194,10 +1194,10 @@ function RepairVehicleEngine()
 				print("veh not matched")
 			end
 		else
-			ShowNotifyESX(Lang['veh_must_be_on_lift'])
+			exports['mythic_notify']:DoHudText('error', Lang['veh_must_be_on_lift'])
 		end
 	else
-		ShowNotifyESX(Lang['no_vehicle_nearby'])
+		exports['mythic_notify']:DoHudText('error', Lang['no_vehicle_nearby'])
 	end
 end
 
@@ -1235,15 +1235,15 @@ function RepairVehicleHealthPart(p)
 		if vehOnLift[plate] ~= nil then 
 			local newValue = tonumber(repairVal)
 			if vehOnLift[plate].health[selected.degName] ~= nil then 
-				if newValue > 10.0 then 
-					ShowNotifyESX(Lang['health_part_exceeded'])
-				elseif newValue < vehOnLift[plate].health[selected.degName].value then 
-					ShowNotifyESX(Lang['not_decrease_health_val'])
+				if newValue > 10.0 then
+					exports['mythic_notify']:DoHudText('error', Lang['health_part_exceeded'])
+				elseif newValue < vehOnLift[plate].health[selected.degName].value then
+					exports['mythic_notify']:DoHudText('error', Lang['not_decrease_health_val'])
 				else
 					local difference = (newValue - vehOnLift[plate].health[selected.degName].value)
 					local valueToAdd = 0
 					if difference <= 0 then
-						ShowNotifyESX(Lang['not_decrse_or_same_val'])
+						exports['mythic_notify']:DoHudText('error', Lang['not_decrse_or_same_val'])
 					else
 						if difference > 0 and difference <= 1.0 then 
 							valueToAdd = 1.0
@@ -1254,7 +1254,7 @@ function RepairVehicleHealthPart(p)
 					end
 				end
 			else
-				ShowNotifyESX(Lang['veh_must_be_inspected'])
+				exports['mythic_notify']:DoHudText('error', Lang['veh_must_be_inspected'])
 			end
 		end
 	end
@@ -1299,7 +1299,7 @@ function RepairSelectedHealthPart(plate, label, degName, materials, newValue, ad
 								SetVehicleEngineHealth(vehicle, engineValue)
 							end
 						else
-							ShowNotifyESX(Lang['need_more_materials'])
+							exports['mythic_notify']:DoHudText('error', Lang['need_more_materials'])
 						end
 					end, plate, degName, materials, newValue, addValue, vehOnLift)
 					break
@@ -1311,7 +1311,7 @@ function RepairSelectedHealthPart(plate, label, degName, materials, newValue, ad
 			end
 		end
 	else
-		ShowNotifyESX(Lang['no_vehicle_nearby'])
+		exports['mythic_notify']:DoHudText('error', Lang['no_vehicle_nearby'])
 	end
 end
 
@@ -1382,17 +1382,17 @@ function InspectVehicleFunction()
 						end
 						vehOnLift[plate].health = vehHealth
 					else
-						ShowNotifyESX("Works with only player owned vehicles.")
+						exports['mythic_notify']:DoHudText('error', "Works with only player owned vehicles.")
 					end
 				end, plate)
 			else
 				print("veh not matched")
 			end
 		else
-			ShowNotifyESX(Lang['veh_must_be_on_lift'])
+			exports['mythic_notify']:DoHudText('error', Lang['veh_must_be_on_lift'])
 		end
 	else
-		ShowNotifyESX(Lang['no_vehicle_nearby'])
+		exports['mythic_notify']:DoHudText('error', Lang['no_vehicle_nearby'])
 	end
 end
 
@@ -1431,7 +1431,7 @@ function CarJackFunction(type)
 						if not vehAnalysed then 
 							label = "Analyse Vehicle Body"
 						else
-							ShowNotifyESX(Lang['veh_already_analyzed'])
+							exports['mythic_notify']:DoHudText('error', Lang['veh_already_analyzed'])
 							break
 						end
 					end
@@ -1440,7 +1440,7 @@ function CarJackFunction(type)
 						isJackRaised = false
 						label = Lang['raise_jack']
 					elseif type == 'analyse' then 
-						ShowNotifyESX(Lang['raise_veh_b4_analyze'])
+						exports['mythic_notify']:DoHudText('error', Lang['raise_veh_b4_analyze'])
 						break
 					end
 				end
@@ -1471,7 +1471,7 @@ function CarJackFunction(type)
 							if hasItem then 
 								UseTheJackFunction(vehicle)
 							else
-								ShowNotifyESX(Lang['car_jack_carry'])
+								exports['mythic_notify']:DoHudText('error', Lang['car_jack_carry'])
 							end
 						end, item)
 					end
@@ -1484,7 +1484,7 @@ function CarJackFunction(type)
 			end
 		end
 	else
-		ShowNotifyESX(Lang['no_vehicle_nearby'])
+		exports['mythic_notify']:DoHudText('error', Lang['no_vehicle_nearby'])
 	end
 	usingJack = false
 end
@@ -1673,7 +1673,7 @@ RegisterNetEvent('t1ger_mechanicjob:installBodyPartCL')
 AddEventHandler('t1ger_mechanicjob:installBodyPartCL', function(id, val)
 	local vehicle = GetClosestVehicle(coords.x, coords.y, coords.z, 5.0, 0, 71)
 	if vehicle ~= 0 then 
-		if vehAnalysed then else return ShowNotifyESX(Lang['analyze_veh_first']) end
+		if vehAnalysed then else return exports['mythic_notify']:DoHudText('error', Lang['analyze_veh_first']) end
 		GetControlOfEntity(vehicle)
 		local vehCoords = GetEntityCoords(vehicle, 1)
 		local distance = GetDistanceBetweenCoords(coords, vehCoords, false)
@@ -1707,7 +1707,7 @@ AddEventHandler('t1ger_mechanicjob:installBodyPartCL', function(id, val)
 										break
 									else
 										if tonumber(i + 1) == tonumber(GetNumberOfVehicleDoors(vehicleData[plate].entity) - 2) then 
-											ShowNotifyESX(Lang['all_doors_intact'])
+											exports['mythic_notify']:DoHudText('error',Lang['all_doors_intact'])
 											break
 										end
 									end
@@ -1719,7 +1719,7 @@ AddEventHandler('t1ger_mechanicjob:installBodyPartCL', function(id, val)
 									TriggerServerEvent('t1ger_mechanicjob:syncVehicleBodySV', plate)
 									TriggerServerEvent('t1ger_mechanicjob:removeItem', val.item, 1)
 								else
-									ShowNotifyESX(Lang['hood_already_installed'])
+									exports['mythic_notify']:DoHudText('error',Lang['hood_already_installed'])
 								end
 							end
 							if id == 3 then 
@@ -1728,7 +1728,7 @@ AddEventHandler('t1ger_mechanicjob:installBodyPartCL', function(id, val)
 									TriggerServerEvent('t1ger_mechanicjob:syncVehicleBodySV', plate)
 									TriggerServerEvent('t1ger_mechanicjob:removeItem', val.item, 1)
 								else
-									ShowNotifyESX(Lang['trunk_already_installed'])
+									exports['mythic_notify']:DoHudText('error', Lang['trunk_already_installed'])
 								end
 							end
 							if id == 4 then 
@@ -1742,7 +1742,7 @@ AddEventHandler('t1ger_mechanicjob:installBodyPartCL', function(id, val)
 										end
 									else
 										if tonumber(i + 1) == tonumber(GetVehicleNumberOfWheels(vehicleData[plate].entity) - 1) then
-											ShowNotifyESX(Lang['all_wheels_intact'])
+											exports['mythic_notify']:DoHudText('error', Lang['all_wheels_intact'])
 											SetVehicleCanDeformWheels(vehicle, true)
 										end
 									end
@@ -1756,7 +1756,7 @@ AddEventHandler('t1ger_mechanicjob:installBodyPartCL', function(id, val)
 
 							local progression = GetBodyRepairProgression(vehicle)
 							print(progression)
-							ShowNotifyESX("Progression: ["..progression.."/100]")
+							exports['mythic_notify']:DoHudText('inform', "Progression: ["..progression.."/100]")
 							if progression >= 100 then 
 								SetVehicleCanDeformWheels(vehicle, true)
 								Wait(100)
@@ -1764,13 +1764,11 @@ AddEventHandler('t1ger_mechanicjob:installBodyPartCL', function(id, val)
 								SetVehicleEngineHealth(vehicle, vehicleData[plate].report.engine)
 								SetVehicleBodyHealth(vehicle, 1000.0)
 								vehAnalysed = false
-								--ShowNotifyESX(Lang['all_body_repairs_done'])
 								exports['mythic_notify']:DoHudText('success', Lang['all_body_repairs_done'])
 							end
 							break
 						end
 					else
-						--ShowNotifyESX(Lang['raise_and_analyze'])
 						exports['mythic_notify']:DoHudText('error', Lang['raise_and_analyze'])
 						break
 					end
@@ -1780,10 +1778,10 @@ AddEventHandler('t1ger_mechanicjob:installBodyPartCL', function(id, val)
 				end
 			end
 		else
-			ShowNotifyESX(Lang['finish_current_install'])
+			exports['mythic_notify']:DoHudText('error', Lang['finish_current_install'])
 		end
 	else
-		ShowNotifyESX(Lang['no_vehicle_nearby'])
+		exports['mythic_notify']:DoHudText('error', Lang['no_vehicle_nearby'])
 	end
 	installingPart = false
 end)
@@ -1871,12 +1869,12 @@ AddEventHandler('t1ger_mechanicjob:useRepairKit', function(type, val)
 					-- Chance to destroy item:
 					if math.random(100) > val.chanceToKeep then
 						TriggerServerEvent('t1ger_mechanicjob:removeItem', val.item, 1)
-						ShowNotifyESX(Lang['repair_kit_broke'])
+						exports['mythic_notify']:DoHudText('error', Lang['repair_kit_broke'])
 					end
 					-- end:
 					SetVehicleDoorShut(vehicle, 4, 1, 1)
 					ClearPedTasks(player)
-					ShowNotifyESX(Lang['repairkit_veh_repaired'])
+					exports['mythic_notify']:DoHudText('inform', Lang['repairkit_veh_repaired'])
 					vehRepaired = true
 					repairing = false
 					break
