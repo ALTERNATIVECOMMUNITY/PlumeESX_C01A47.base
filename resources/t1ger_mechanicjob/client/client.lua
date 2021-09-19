@@ -74,16 +74,19 @@ function bossMenuFunction(k,v,distToBoss)
 		end
 	else
 		local mk = Config.MarkerSettings
-		if distToBoss <= 10.0 and distToBoss >= 2.0 then
+		if distToBoss <= 10.0 and distToBoss >= 3.0 then
 			if mk.enable then
-				DrawMarker(mk.type, v.menuPos[1], v.menuPos[2], v.menuPos[3], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mk.scale.x, mk.scale.y, mk.scale.z, mk.color.r, mk.color.g, mk.color.b, mk.color.a, false, true, 2, false, false, false, false)
+				DrawMarker(mk.type, v.menuPos[1], v.menuPos[2], v.menuPos[3], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mk.scale.x, mk.scale.y, mk.scale.z, mk.color.r, mk.color.g, mk.color.b, mk.color.a, false, true, 2, false, false, false, false)	
 			end
+			exports["np-ui"]:hideInteraction('manageShop')
 		elseif distToBoss <= 2.0 then
 			if plyShopID == k then
-				DrawText3Ds(v.menuPos[1], v.menuPos[2], v.menuPos[3], Lang['mech_shop_manage'])
+				--DrawText3Ds(v.menuPos[1], v.menuPos[2], v.menuPos[3], Lang['mech_shop_manage'])
+				exports["np-ui"]:showInteraction('[E] Manage Shop','manageShop')
 				if IsControlJustPressed(0, Config.KeyToManageShop) then
 					bossMenu = v
 					MechShopManageMenu(k,v)
+					exports["np-ui"]:hideInteraction('manageShop')
 				end
 			else
 				if emptyShops[k] == k then
@@ -99,7 +102,7 @@ function bossMenuFunction(k,v,distToBoss)
 						DrawText3Ds(v.menuPos[1], v.menuPos[2], v.menuPos[3], Lang['only_one_mech_shop'])
 					end
 				end
-			end
+			end	
 		end
 	end
 end
@@ -487,9 +490,12 @@ function storageMenuFunction(k,v,distToStorage)
 			if mk.enable then
 				DrawMarker(mk.type, v.storage[1], v.storage[2], v.storage[3], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mk.scale.x, mk.scale.y, mk.scale.z, mk.color.r, mk.color.g, mk.color.b, mk.color.a, false, true, 2, false, false, false, false)
 			end
+			exports["np-ui"]:hideInteraction('storage')
 		elseif distToStorage <= 2.0 then
-			DrawText3Ds( v.storage[1], v.storage[2], v.storage[3], Lang['press_to_storage'])
+			--DrawText3Ds( v.storage[1], v.storage[2], v.storage[3], Lang['press_to_storage'])
+			exports["np-ui"]:showInteraction('[E] Storage','storage')
 			if IsControlJustPressed(0, 38) then
+				exports["np-ui"]:hideInteraction('storage')
 				ESX.TriggerServerCallback('t1ger_mechanicjob:checkAccess', function(hasAccess)
 					if hasAccess then 
 						storageMenu = v
@@ -505,6 +511,9 @@ end
 
 -- Storage Menu:
 function MechShopStorageMenu(id, val)
+	print(Config.MechanicShops[id].storageID)
+	exports["mf-inventory"]:openOtherInventory(Config.MechanicShops[id].storageID)
+	--[[
     if not IsEntityPlayingAnim(player, 'mini@repair', 'fixing_a_player', 3) then
         LoadAnim('mini@repair') 
         TaskPlayAnim(player, 'mini@repair', 'fixing_a_player', 8.0, -8, -1, 49, 0, 0, 0, 0)
@@ -622,6 +631,7 @@ function MechShopStorageMenu(id, val)
 		storageMenu = nil
 		ClearPedSecondaryTask(player)
 	end)
+	]]--
 end
 -- ## STORAGE MENU END ## --
 
@@ -638,11 +648,14 @@ function workbenchMenuFunction(k,v,distToWorkbench)
 		local mk = Config.MarkerSettings
 		if distToWorkbench <= 10.0 and distToWorkbench >= 2.0 then
 			if mk.enable then
-				DrawMarker(mk.type, v.workbench[1], v.workbench[2], v.workbench[3], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mk.scale.x, mk.scale.y, mk.scale.z, mk.color.r, mk.color.g, mk.color.b, mk.color.a, false, true, 2, false, false, false, false)
+				--DrawMarker(mk.type, v.workbench[1], v.workbench[2], v.workbench[3], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mk.scale.x, mk.scale.y, mk.scale.z, mk.color.r, mk.color.g, mk.color.b, mk.color.a, false, true, 2, false, false, false, false)
 			end
+			exports["np-ui"]:hideInteraction('workbench')
 		elseif distToWorkbench <= 2.0 then
-			DrawText3Ds( v.workbench[1], v.workbench[2], v.workbench[3], Lang['press_to_workbench'])
+			--DrawText3Ds( v.workbench[1], v.workbench[2], v.workbench[3], Lang['press_to_workbench'])
+			exports["np-ui"]:showInteraction('[E] Workbench','workbench')
 			if IsControlJustPressed(0, 38) then
+				exports["np-ui"]:hideInteraction('workbench')
 				ESX.TriggerServerCallback('t1ger_mechanicjob:checkAccess', function(hasAccess)
 					if hasAccess then 
 						workbenchMenu = v
@@ -656,12 +669,37 @@ function workbenchMenuFunction(k,v,distToWorkbench)
 	end
 end
 
+RegisterNetEvent('t1ger_mechanicjob:sendCraft')
+AddEventHandler('t1ger_mechanicjob:sendCraft', function(data)
+	if not IsEntityPlayingAnim(player, 'mini@repair', 'fixing_a_player', 3) then
+        LoadAnim('mini@repair') 
+        TaskPlayAnim(player, 'mini@repair', 'fixing_a_player', 8.0, -8, -1, 49, 0, 0, 0, 0)
+    end
+	exports['progressBars']:startUI((Config.CraftTime * 1000), (Lang['crafting_item']:format(string.upper(data.label))))
+	Citizen.Wait((Config.CraftTime * 1000))
+	TriggerServerEvent('t1ger_mechanicjob:craftItem', data.label, data.item, data.recipe, data.id, data.val)
+	ClearPedSecondaryTask(player)
+end)
+
 -- Workbench Menu:
 function MechShopWorkbenchMenu(id,val)
+	local menuData = {}
+	for i, v in pairs(Config.Workbench) do
+		local description = ''
+		for j, r in pairs(v.recipe) do
+			description = description..Config.Materials[r.id].label..': '..r.qty..' '
+		end
+		v['id'] = id
+		v['value'] = val
+		menuData[i] = {title = v.label, description = description, action = 't1ger_mechanicjob:sendCraft', key = v}
+	end
+	exports["np-ui"]:showContextMenu(menuData)
+	--[[
     if not IsEntityPlayingAnim(player, 'mini@repair', 'fixing_a_player', 3) then
         LoadAnim('mini@repair') 
         TaskPlayAnim(player, 'mini@repair', 'fixing_a_player', 8.0, -8, -1, 49, 0, 0, 0, 0)
     end
+	
 	local keyPressed = false
 	ESX.UI.Menu.CloseAll()
 	
@@ -718,6 +756,7 @@ function MechShopWorkbenchMenu(id,val)
 		workbenchMenu = nil
 		ClearPedSecondaryTask(player)
 	end)
+	]]--
 end
 
 -- View Recipe Function:
@@ -766,8 +805,9 @@ Citizen.CreateThread(function()
 							end
 							if liftDist < 2.0 then
 								if not v.inUse then 
-									DrawText3Ds(v.entry[1], v.entry[2], v.entry[3], Lang['park_on_lift'])
+									exports["np-ui"]:showInteraction('[E] Park on lift','lift')
 									if IsControlJustPressed(0, 38) then
+										exports["np-ui"]:hideInteraction('lift')
 										local plate = GetVehicleNumberPlateText(curVehicle):gsub("^%s*(.-)%s*$", "%1")
 										v.currentVeh = curVehicle
 										v.inUse = true
@@ -784,19 +824,22 @@ Citizen.CreateThread(function()
 										break
 									end
 								else
-									DrawText3Ds(v.entry[1], v.entry[2], v.entry[3], Lang['lift_occupied'])
+									
 								end
+							else
+								exports["np-ui"]:hideInteraction('lift')
 							end
 						end
 						-- Detach Vehicle or Move Up/Down:
 						local controlDist = GetDistanceBetweenCoords(coords.x, coords.y, coords.z, v.control[1], v.control[2], v.control[3], false)
 						if controlDist < mk.drawDist and not IsPedInAnyVehicle(player, 1) then 
 							if mk.enable and controlDist > 1.5 then
-								DrawMarker(mk.type, v.control[1], v.control[2], v.control[3], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mk.scale.x, mk.scale.y, mk.scale.z, mk.color.r, mk.color.g, mk.color.b, mk.color.a, false, true, 2, false, false, false, false)
+								--DrawMarker(mk.type, v.control[1], v.control[2], v.control[3], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mk.scale.x, mk.scale.y, mk.scale.z, mk.color.r, mk.color.g, mk.color.b, mk.color.a, false, true, 2, false, false, false, false)
 							end
 							if controlDist < 1.5 then
 								if v.inUse then 
-									DrawText3Ds(v.control[1], v.control[2], v.control[3], Lang['remove_or_move_veh'])
+									--DrawText3Ds(v.control[1], v.control[2], v.control[3], Lang['remove_or_move_veh'])
+									exports["np-ui"]:showInteraction('[G] Remove veh [↑] Move up [↓] Move down', 'lift')
 									if IsControlJustPressed(0, 47) then
 										Citizen.Wait(1000)
 										FreezeEntityPosition(v.currentVeh, false)
@@ -825,8 +868,9 @@ Citizen.CreateThread(function()
 										end
 									end
 								else
-									DrawText3Ds(v.control[1], v.control[2], v.control[3], Lang['no_veh_to_control'])
 								end
+							else
+								exports["np-ui"]:hideInteraction('lift')
 							end
 						end
 					end
@@ -852,7 +896,7 @@ RegisterNetEvent('t1ger_mechanicjob:mechActionMenu')
 AddEventHandler('t1ger_mechanicjob:mechActionMenu', function(k) 
 	local key = k
 	if key == 'Billing' then
-
+		createBill()
 	elseif key == 'CarJack' then
 		CarJackFunction('interact')
 	elseif key == 'InspectVehicle' then
@@ -924,6 +968,31 @@ function carryObject(prop)
 
 end
 
+RegisterNetEvent('t1ger_mechanicjob:billClient')
+AddEventHandler('t1ger_mechanicjob:billClient', function(id, amount)
+	TriggerServerEvent('t1ger_mechanicjob:sendBill', id, amount)
+end)
+
+
+function createBill()
+	exports['np-ui']:openApplication('textbox', {
+        callbackUrl = 't1ger_mechanicjob:billClient',
+        key = 1,
+        show = true,
+        items = {
+            {
+                icon = "fas fa-user",
+                label = "User ID: ",
+                name = "id",
+            },
+			{
+				icon = "fas fa-money-bill",
+                label = "Amount to bill: ",
+                name = "amount",
+			}
+        },
+    })
+end
 -- Mechanic Action Menu:
 function OpenMechanicActionMenu()
 	if PlayerData.job and PlayerData.job.name == "mechanic" then
@@ -993,81 +1062,6 @@ function OpenMechanicActionMenu()
 	exports["np-ui"]:showContextMenu(menuOptions)
 
 	end
-	--[[
-	if PlayerData.job and PlayerData.job.name == "mechanic" then
-		local elements = {
-			{ label = "Billing", value = "mech_billing" },
-			{ label = "Use Car Jack", value = "use_car_jack" },
-			{ label = "Inspect Vehicle", value = "inspect_vehicle" },
-			{ label = "Repair Health Parts", value = "repair_health_parts" },
-			{ label = "Vehicle Engine Repair", value = "veh_engine_repair" },
-			{ label = "Vehicle Body Repair", value = "veh_body_repair" },
-			{ label = "Prop Emotes", value = "prop_emotes" },
-			{ label = "NPC Jobs", value = "npc_jobs" },
-		}
-		ESX.UI.Menu.Open('default', GetCurrentResourceName(), "mechanic_action_main_menu",
-			{
-				title    = "Mechanic Menu",
-				align    = "center",
-				elements = elements
-			},
-		function(data, menu)
-			if(data.current.value == 'mech_billing') then
-				menu.close()
-				ESX.UI.Menu.Open('dialog', GetCurrentResourceName(), 'mechanic_billing_dialog', {
-					title = "Invoice Amount"
-				}, function(data2, menu2)
-					menu2.close()
-					local amount = tonumber(data2.value)
-					if amount ~= nil then 
-						local closestPlayer, closestDistance = ESX.Game.GetClosestPlayer()
-						if closestPlayer == -1 or closestDistance > 3.0 then
-							ShowNotifyESX(Lang['no_players_nearby'])
-						else
-							TriggerServerEvent('t1ger_mechanicjob:sendBill', GetPlayerServerId(closestPlayer), amount)
-						end
-					else
-						ShowNotifyESX(Lang['invalid_amount'])
-					end
-				end,
-				function(data2, menu2)
-					menu2.close()	
-					OpenMechanicActionMenu()
-				end)
-			end
-			if(data.current.value == 'inspect_vehicle') then
-				menu.close()
-				InspectVehicleFunction()
-			end
-			if(data.current.value == 'veh_engine_repair') then
-				menu.close()
-				RepairVehicleEngine()
-			end
-			if(data.current.value == 'repair_health_parts') then
-				menu.close()
-				RepairVehicleHealthPart()
-			end
-			if(data.current.value == 'veh_body_repair') then
-				menu.close()
-				CarJackFunction('analyse')
-			end
-			if(data.current.value == 'use_car_jack') then
-				menu.close()
-				CarJackFunction('interact')
-			end
-			if(data.current.value == 'prop_emotes') then
-				menu.close()
-				CarryObjectsMainMenu()
-			end
-			if(data.current.value == 'npc_jobs') then
-				menu.close()
-				ManageNpcJobs()
-			end
-		end, function(data, menu)
-			menu.close()
-		end)
-	end
-	]]--
 end
 
 
@@ -1266,76 +1260,7 @@ function RepairVehicleHealthPart(p)
 	end
 	repairVal = nil
 end
---[[
-function RepairVehicleHealthPart()
-	local vehicle = GetClosestVehicle(coords.x, coords.y, coords.z, 5.0, 0, 71)
-	local plate = GetVehicleNumberPlateText(vehicle):gsub("^%s*(.-)%s*$", "%1")
-	if vehicle ~= 0 then 
-		if vehOnLift[plate] ~= nil then 
-			if GetEntityModel(GetHashKey(vehicle)) == GetEntityModel(GetHashKey(vehOnLift[plate].entity)) then 
-				if vehOnLift[plate].health ~= nil then
-					local elements = {}
-					for k,v in pairs(Config.HealthParts) do
-						table.insert(elements, {label = v.label, degName = v.degName, materials = v.materials})
-					end
-					ESX.UI.Menu.Open('default', GetCurrentResourceName(), "veh_health_part_menu",
-						{
-							title    = "Select Repair Part",
-							align    = "center",
-							elements = elements
-						},
-					function(data, menu)
-						menu.close()
-						local selected = data.current
-						ESX.UI.Menu.Open('dialog', GetCurrentResourceName(), 'mech_veh_health_part_dialog', {
-							title = "Select Health Value"
-						}, function(data2, menu2)
-							menu2.close()
-							local newValue = tonumber(data2.value)
-							if vehOnLift[plate].health[selected.degName] ~= nil then 
-								if newValue > 10.0 then 
-									ShowNotifyESX(Lang['health_part_exceeded'])
-								elseif newValue < vehOnLift[plate].health[selected.degName].value then 
-									ShowNotifyESX(Lang['not_decrease_health_val'])
-								else
-									local difference = (newValue - vehOnLift[plate].health[selected.degName].value)
-									local valueToAdd = 0
-									if difference <= 0 then
-										ShowNotifyESX(Lang['not_decrse_or_same_val'])
-									else
-										if difference > 0 and difference <= 1.0 then 
-											valueToAdd = 1.0
-										else 
-											valueToAdd = math.floor(difference + 1.0)
-										end
-										RepairSelectedHealthPart(plate, selected.label, selected.degName, selected.materials, newValue, valueToAdd)
-									end
-								end
-							else
-								ShowNotifyESX(Lang['veh_must_be_inspected'])
-							end
-						end,
-						function(data2, menu2)
-							menu2.close()	
-							RepairVehicleHealthPart()
-						end)
-					end, function(data, menu)
-						menu.close()
-					end)
-				else
-					ShowNotifyESX(Lang['veh_must_be_inspected'])
-				end
-			else
-				print("veh not matched")
-			end
-		else
-			ShowNotifyESX(Lang['veh_must_be_on_lift'])
-		end
-	else
-		ShowNotifyESX(Lang['no_vehicle_nearby'])
-	end
-end
-]]--
+
 function RepairSelectedHealthPart(plate, label, degName, materials, newValue, addValue)
 	local vehicle = GetClosestVehicle(coords.x, coords.y, coords.z, 5.0, 0, 71)
 	local repairingPart = false
@@ -1359,11 +1284,11 @@ function RepairSelectedHealthPart(plate, label, degName, materials, newValue, ad
 					ClearPedTasks(player)
 					ESX.TriggerServerCallback('t1ger_mechanicjob:getMaterialsForHealthRep', function(hasMaterials)
 						if hasMaterials then 
-							vehOnLift[plate].health[degName].value = round(newValue,2)
+							vehOnLift[plate].health[degName].value = newValue
 							for i, v in pairs(health) do
 								if v.part == degName then
-									print(v.part)
-									health[i].value = round(newValue,2)
+									health[i].value = round((newValue*10),2)
+									print(health[i].value)
 									index = i
 								end
 							end
@@ -1830,19 +1755,23 @@ AddEventHandler('t1ger_mechanicjob:installBodyPartCL', function(id, val)
 							Citizen.Wait(100)
 
 							local progression = GetBodyRepairProgression(vehicle)
+							print(progression)
 							ShowNotifyESX("Progression: ["..progression.."/100]")
 							if progression >= 100 then 
 								SetVehicleCanDeformWheels(vehicle, true)
 								Wait(100)
 								SetVehicleFixed(vehicle)
+								SetVehicleEngineHealth(vehicle, vehicleData[plate].report.engine)
 								SetVehicleBodyHealth(vehicle, 1000.0)
 								vehAnalysed = false
-								ShowNotifyESX(Lang['all_body_repairs_done'])
+								--ShowNotifyESX(Lang['all_body_repairs_done'])
+								exports['mythic_notify']:DoHudText('success', Lang['all_body_repairs_done'])
 							end
 							break
 						end
 					else
-						ShowNotifyESX(Lang['raise_and_analyze'])
+						--ShowNotifyESX(Lang['raise_and_analyze'])
+						exports['mythic_notify']:DoHudText('error', Lang['raise_and_analyze'])
 						break
 					end
 				end
@@ -2515,6 +2444,7 @@ AddEventHandler('t1ger_mechanicjob:syncVehicleBodyCL', function(plate)
 end)
 
 function GetBodyRepairProgression(vehicleEntity)
+	print(vehicleEntity)
     if DoesEntityExist(vehicleEntity) then
         local numWheels = GetVehicleNumberOfWheels(vehicleEntity)
         local numDoors = (GetNumberOfVehicleDoors(vehicleEntity) - 2)
@@ -2538,6 +2468,8 @@ function GetBodyRepairProgression(vehicleEntity)
                 numWheels = numWheels + 1
             end
         end
+		print(newValue)
+		print(totalValue)
         local newValue = numWheels + numDoors + numHood + numTrunk
         return (math.floor((newValue / totalValue) * 100))
     end
@@ -2565,14 +2497,3 @@ RegisterNetEvent('t1ger_mechanicjob:JobDataCL')
 AddEventHandler('t1ger_mechanicjob:JobDataCL', function(data)
     Config.NPC_RepairJobs = data
 end)
-
--- ilAn#9999
--- ilAn#9999
--- ilAn#9999
--- ilAn#9999
--- ilAn#9999
--- ilAn#9999
--- ilAn#9999
--- ilAn#9999
--- ilAn#9999
--- ilAn#9999

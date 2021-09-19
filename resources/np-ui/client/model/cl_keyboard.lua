@@ -6,6 +6,18 @@ RegisterNUICallback("np-ui:test:input", function(data, cb)
     cb("ok")
 end)
 
+RegisterNUICallback("t1ger_mechanicjob:sendCraft", function(data, cb)
+    TriggerEvent('t1ger_mechanicjob:sendCraft', data.key)
+    SetNuiFocus(false, false)
+    cb("ok")
+end)
+
+RegisterNUICallback("t1ger_mechanicjob:billClient", function(data, cb)
+    SetNuiFocus(false, false)
+    TriggerEvent('t1ger_mechanicjob:billClient', tonumber(data[1].value), tonumber(data[2].value))
+    cb("ok")
+end)
+
 RegisterNUICallback("t1ger_mechanicjob:mechRepairValue", function(data, cb)
     TriggerEvent('t1ger_mechanicjob:setRepairValue', data[1].value)
     SetNuiFocus(false, false)
@@ -123,4 +135,8 @@ RegisterCommand("testtaskbar", function()
         taskID = 1,
         label = "Test Taskbar",
     })
+end)
+
+RegisterCommand("fixfocus", function()
+    SetNuiFocus(false, false)
 end)
