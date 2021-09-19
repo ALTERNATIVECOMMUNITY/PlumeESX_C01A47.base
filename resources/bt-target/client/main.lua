@@ -31,7 +31,30 @@ end
 function playerTargetEnable()
     if success then return end
     if IsPedArmed(PlayerPedId(), 6) then return end
-
+    local veh,dis = ESX.Game.GetClosestVehicle(GetEntityCoords(PlayerPedId()))
+    if veh and dis < 3 then 
+        RemoveZone('VehPlate')
+        local boneIndex = GetEntityBoneIndexByName(veh, 'platelight')
+        print(boneIndex)
+        local pos = GetWorldPositionOfEntityBone(veh, boneIndex)
+        AddBoxZone("VehPlate", pos, 0.4, 0.6, {
+            name="VehPlate",
+            heading=91,
+            debugPoly=false,
+            minZ=pos.z-0.1,
+            maxZ=pos.z+0.1
+            }, {
+                options = {
+                    {
+                        event = "pe-fake-plate:Peak",
+                        icon = "fas fa-tools",
+                        label = "Add/Remove Fake Plate",
+                    },
+                },
+                job = {"all"},
+                distance = 1.5
+        })
+    end
     targetActive = true
 
     SendNUIMessage({response = "openTarget"})
@@ -120,10 +143,9 @@ end
 
 function playerTargetDisable()
     if success then return end
-
     targetActive = false
-
     SendNUIMessage({response = "closeTarget"})
+    
 end
 
 --NUI CALL BACKS
@@ -136,6 +158,7 @@ RegisterNUICallback('selectTarget', function(data, cb)
     targetActive = false
 
     TriggerEvent(data.event)
+    
 end)
 
 RegisterNUICallback('closeTarget', function(data, cb)
@@ -144,6 +167,7 @@ RegisterNUICallback('closeTarget', function(data, cb)
     success = false
 
     targetActive = false
+    
 end)
 
 --Functions from https://forum.cfx.re/t/get-camera-coordinates/183555/14

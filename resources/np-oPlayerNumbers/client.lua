@@ -97,7 +97,8 @@ end)
 
 Citizen.CreateThread(function()
     while true do
-        if IsControlPressed(0, Controlkey["generalScoreboard"][1]) then
+        DisableControlAction(0, Controlkey["generalScoreboard"][1], true)
+        if IsDisabledControlPressed(0, Controlkey["generalScoreboard"][1]) then
 
             for i=0,255 do
                 N_0x31698aa80e0223f8(i)

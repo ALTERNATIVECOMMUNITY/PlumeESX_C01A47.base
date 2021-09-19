@@ -6,6 +6,43 @@ RegisterNUICallback("np-ui:test:input", function(data, cb)
     cb("ok")
 end)
 
+RegisterNUICallback("t1ger_mechanicjob:mechRepairValue", function(data, cb)
+    TriggerEvent('t1ger_mechanicjob:setRepairValue', data[1].value)
+    SetNuiFocus(false, false)
+    cb("ok")
+end)
+
+RegisterNUICallback("t1ger_mechanicjob:mechActionMenu", function(data, cb)
+    SetNuiFocus(false, false)
+    TriggerEvent('t1ger_mechanicjob:mechActionMenu', data.key)
+    cb("ok")  
+end)
+
+RegisterNUICallback("t1ger_mechanicjob:buyMenu", function(data, cb)
+    SetNuiFocus(false, false)
+    exports['np-ui']:openApplication('textbox', {
+        callbackUrl = 't1ger_mechanicjob:buyMenuName',
+        key = 1,
+        show = true,
+        items = {
+            {
+                icon = "fas fa-pencil-alt",
+                label = "Shop name:",
+                name = "text",
+            },
+        },
+    })
+    TriggerEvent('t1ger_mechanicjob:buyMenu', data.key) 
+    cb("ok")   
+end)
+
+RegisterNUICallback("t1ger_mechanicjob:buyMenuName", function(data, cb)
+	print(data[1].value)
+    TriggerEvent('t1ger_mechanicjob:setName', data[1].value)
+    SetNuiFocus(false, false)
+    cb("ok")
+end)
+
 RegisterNUICallback("phone:PayPhoneDial", function(data, cb)
     TriggerEvent('phone:makepayphonecall', data[1])
     SetNuiFocus(false, false)

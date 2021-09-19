@@ -85,7 +85,7 @@ ESX.RegisterServerCallback('esx_advancedgarage:isVehicleOwned', function(source,
 	MySQL.Async.fetchAll('SELECT * FROM owned_vehicles WHERE plate = @plate', {
 		['@plate'] = plate
 	}, function(data)
-		if data[1] ~= nil then
+		if data[1] ~= nil and location then
 			MySQL.Async.execute('UPDATE owned_vehicles SET `stored` = @stored, `location` = @location WHERE plate = @plate', {
 				['@stored'] = true,
 				['@plate'] = plate,
@@ -97,7 +97,7 @@ ESX.RegisterServerCallback('esx_advancedgarage:isVehicleOwned', function(source,
 				cb(true)
 			end)
 		else 
-			cb(false)
+			cb(data)
 		end
 	end)
 end)
