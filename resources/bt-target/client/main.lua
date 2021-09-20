@@ -156,9 +156,15 @@ RegisterNUICallback('selectTarget', function(data, cb)
     success = false
 
     targetActive = false
-
-    TriggerEvent(data.event)
-    
+    print(data.key)
+    for i, v in pairs(data.key) do
+        print(v)
+    end
+    if data.key then
+        TriggerEvent(data.event, data.key)
+    else
+        TriggerEvent(data.event)
+    end    
 end)
 
 RegisterNUICallback('closeTarget', function(data, cb)

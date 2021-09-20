@@ -1,5 +1,5 @@
 
-
+let key = undefined
 window.addEventListener('message', function(event) {
     let item = event.data;
 
@@ -21,7 +21,9 @@ window.addEventListener('message', function(event) {
             $("#target-"+index).hover((e)=> {
                 $("#target-"+index).css("color",e.type === "mouseenter"?"rgb(30,144,255)":"white")
             })
-            
+            if(item.key != undefined){
+                key = item.key
+            }
             $("#target-"+index+"").css("padding-top", "7px");
 
             $("#target-"+index).data('TargetData', item.event);
@@ -43,6 +45,7 @@ $(document).on('mousedown', (event) => {
 
         $.post('http://bt-target/selectTarget', JSON.stringify({
             event: TargetData,
+            key: key,
         }));
 
         $(".target-label").html("");

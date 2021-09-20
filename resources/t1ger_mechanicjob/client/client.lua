@@ -6,6 +6,8 @@ name = nil
 repairVal = nil
 health = {}
 index = nil
+spotsD = {}
+spotsE = {}
 
 Citizen.CreateThread(function()
     while true do
@@ -1134,10 +1136,12 @@ function RepairVehicleEngine()
 
 				while true do 
 					Citizen.Wait(1)
-					distance = (GetDistanceBetweenCoords(coords, vector3(enginePos.x, enginePos.y, enginePos.z), true))
+					distance = #(coords-vector3(enginePos.x, enginePos.y, enginePos.z))
 					if distance < 5.0 then
-						DrawText3Ds(enginePos.x, enginePos.y, enginePos.z, Lang['repair_engine'])
+						--DrawText3Ds(enginePos.x, enginePos.y, enginePos.z, Lang['repair_engine'])
+						exports["np-ui"]:showInteraction('[E] to repair engine', 'engineR')
 						if IsControlJustPressed(0, 38) and distance < 1.0 then
+							exports["np-ui"]:hideInteraction('engineR')
 							-- inspect anim:
 							TaskTurnPedToFaceEntity(player, vehicle, 1.0)
 							Citizen.Wait(1000)
@@ -1183,9 +1187,12 @@ function RepairVehicleEngine()
 								exports['mythic_notify']:DoHudText('error', "Engine is fully functional")
 							end
 							break
+						elseif IsControlJustPressed(0, 38) and distance >1.0 then
+							exports['mythic_notify']:DoHudText('error', "Move to the front of the vehicle")
 						end
 					end
 					if distance > 5.0 then 
+						exports["np-ui"]:hideInteraction('engineR')
 						repairingEngine = false
 						break
 					end
@@ -1315,6 +1322,18 @@ function RepairSelectedHealthPart(plate, label, degName, materials, newValue, ad
 	end
 end
 
+RegisterNetEvent('t1ger_mechanicjob:fetchEngineDmgPeak')
+AddEventHandler('t1ger_mechanicjob:fetchEngineDmgPeak', function(key)
+	TaskTurnPedToFaceEntity(player, key[2], 1.0)
+	Citizen.Wait(1000)
+	TaskStartScenarioInPlace(player, key[3].scenario, 0, true)
+	exports['progressBars']:startUI(1500, Lang['progbar_inspecting_veh'])
+	Citizen.Wait(1500)
+	ClearPedTasksImmediately(player)
+	spotsE[tonumber(key[1])].done = true
+	exports["bt-target"]:RemoveZone('spotE'..key[1])
+end)
+
 function InspectVehicleFunction()
 	local vehicle = GetClosestVehicle(coords.x, coords.y, coords.z, 5.0, 0, 71)
 	local plate = GetVehicleNumberPlateText(vehicle):gsub("^%s*(.-)%s*$", "%1")
@@ -1322,34 +1341,39 @@ function InspectVehicleFunction()
 		if vehOnLift[plate] ~= nil then 
 			if GetEntityModel(GetHashKey(vehicle)) == GetEntityModel(GetHashKey(vehOnLift[plate].entity)) then 
 				local d1,d2 = GetModelDimensions(GetEntityModel(vehicle))
-				local spots = {
-					[1] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, d2.x+0.2,0.0,0.0), scenario = "WORLD_HUMAN_CLIPBOARD", done = false},
-					[2] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, 0.0,d2.y+0.2,0.0), scenario = "WORLD_HUMAN_CLIPBOARD", done = false},
-					[3] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, d1.x-0.2,0.0,0.0), scenario = "WORLD_HUMAN_CLIPBOARD", done = false},
+				local heading = GetEntityHeading(vehicle)
+				spotsE = {
+					[1] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, d2.x,0.0,0.0), scenario = "WORLD_HUMAN_CLIPBOARD", done = false},
+					[2] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, 0.0,d2.y-0.15,0.0), scenario = "WORLD_HUMAN_CLIPBOARD", done = false},
+					[3] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, d1.x,0.0,0.0), scenario = "WORLD_HUMAN_CLIPBOARD", done = false},
 				}
+				for i, v in pairs(spotsE) do
+					local z = v.pos.z -0.3 
+					exports["bt-target"]:AddBoxZone("spotE"..i, vector3(v.pos.x, v.pos.y, z), 0.4, 0.4, {
+						name="spotE"..i,
+						heading=heading,
+						debugPoly=true,
+						minZ=z-0.1,
+						maxZ=z+0.1
+						}, {
+							options = {
+								{
+									event = "t1ger_mechanicjob:fetchEngineDmgPeak",
+									icon = "fas fa-wrench",
+									label = "Inspect",
+									key = {i, vehicle ,v}
+								},
+							},
+							job = {"all"},
+							distance = 2.5
+					})
+				end
 				local inspectingVeh = false
 				while true do
 					Citizen.Wait(1)
 					local vehPos = GetEntityCoords(vehicle, 1)
 					if not inspectingVeh then
-						for k,v in pairs(spots) do
-							local distance = (GetDistanceBetweenCoords(GetEntityCoords(player), vector3(v.pos.x, v.pos.y, v.pos.z), true))
-							if distance < 4.0 then
-								if not v.done then 
-									DrawText3Ds(v.pos.x, v.pos.y, v.pos.z, Lang['inspect_here'])
-									if IsControlJustPressed(0, 38) and distance < 1.0 then
-										TaskTurnPedToFaceEntity(player, vehicle, 1.0)
-										Citizen.Wait(1000)
-										TaskStartScenarioInPlace(player, v.scenario, 0, true)
-										exports['progressBars']:startUI(1500, Lang['progbar_inspecting_veh'])
-										Citizen.Wait(1500)
-										ClearPedTasksImmediately(player)
-										v.done = true
-									end
-								end
-							end
-						end
-						if spots[1].done and spots[2].done and spots[3].done then
+						if spotsE[1].done and spotsE[2].done and spotsE[3].done then
 							inspectingVeh = true
 							Wait(200)
 							break
@@ -1418,7 +1442,7 @@ function CarJackFunction(type)
 		
 		while true do 
 			Citizen.Wait(1)
-			distance = (GetDistanceBetweenCoords(coords, vector3(door.x, door.y, door.z), true))
+			distance = #(coords - vector3(door.x, door.y, door.z))
 			if distance < 6.0 then
 				local label = ""
 				local findObj = GetClosestObjectOfType(vehCoords.x, vehCoords.y, vehCoords.z, 1.0, GetHashKey("prop_carjack"), false, false, false)
@@ -1444,7 +1468,8 @@ function CarJackFunction(type)
 						break
 					end
 				end
-				DrawText3Ds(door.x, door.y, door.z, "~r~[E]~s~ "..label)
+				--DrawText3Ds(door.x, door.y, door.z, "~r~[E]~s~ "..label)
+				exports["np-ui"]:showInteraction('[E] '..label, 'carjack')
 				if IsControlJustPressed(0, 38) and distance < 1.0 then
 					if isJackRaised then
 						if type == 'interact' then
@@ -1477,9 +1502,12 @@ function CarJackFunction(type)
 					end
 					break
 				end
+			elseif IsControlJustPressed(0, 38) and distance > 1.0 then
+				exports['mythic_notify']:DoHudText('error', 'Move to the passenger side of the vehicle')
 			end
 			if distance > 6.0 then 
 				usingJack = false
+				exports["np-ui"]:hideInteraction('carjack')
 				break
 			end
 		end
@@ -1564,41 +1592,57 @@ function UseTheJackFunction(vehicle)
 	ClearPedTasks(player)
 end
 
+RegisterNetEvent('t1ger_mechanicjob:fetchBodyDmgPeak')
+AddEventHandler('t1ger_mechanicjob:fetchBodyDmgPeak', function(key)
+	if key[1] == 2 then
+		SetEntityHeading(player, GetEntityHeading(key[2]))
+		Citizen.Wait(500)
+	else
+		TaskTurnPedToFaceEntity(player, key[2], 1.0)
+		Citizen.Wait(1000)
+	end
+	TaskStartScenarioInPlace(player, key[3].scenario, 0, true)
+	exports['progressBars']:startUI(2500, Lang['progbar_analyzing_veh'])
+	Citizen.Wait(2500)
+	ClearPedTasks(player)
+	spotsD[tonumber(key[1])].done = true
+	exports["bt-target"]:RemoveZone('spot'..key[1])
+end)
+
 function FetchVehicleBodyDamageReport(vehicle, plate)
 	-- Interact To Veh Part:
 	local d1,d2 = GetModelDimensions(GetEntityModel(vehicle))
-	local spots = {
-		[1] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, d2.x+0.2,0.0,0.0), scenario = "WORLD_HUMAN_WELDING", done = false},
-		[2] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, 0.0,d2.y+0.2,0.0), scenario = "WORLD_HUMAN_VEHICLE_MECHANIC", done = false},
-		[3] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, d1.x-0.2,0.0,0.0), scenario = "WORLD_HUMAN_MAID_CLEAN", done = false},
-		[4] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, 0.0,d1.y-0.2,0.0), scenario = "WORLD_HUMAN_CLIPBOARD", done = false},
+	local heading = GetEntityHeading(vehicle)
+	spotsD = {
+		[1] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, d2.x,0.0,0.0), scenario = "WORLD_HUMAN_WELDING", done = false},
+		[2] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, 0.0,d2.y-0.15,0.0), scenario = "WORLD_HUMAN_VEHICLE_MECHANIC", done = false},
+		[3] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, d1.x,0.0,0.0), scenario = "WORLD_HUMAN_MAID_CLEAN", done = false},
+		[4] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, 0.0,d1.y+0.08,0.0), scenario = "WORLD_HUMAN_CLIPBOARD", done = false},
 	}
+	for i, v in pairs(spotsD) do
+		local z = v.pos.z -0.3 
+		exports["bt-target"]:AddBoxZone("spot"..i, vector3(v.pos.x, v.pos.y, z), 0.4, 0.4, {
+			name="spot"..i,
+			heading=heading,
+			debugPoly=true,
+			minZ=z-0.1,
+			maxZ=z+0.1
+			}, {
+				options = {
+					{
+						event = "t1ger_mechanicjob:fetchBodyDmgPeak",
+						icon = "fas fa-wrench",
+						label = "Inspect",
+						key = {i, vehicle ,v}
+					},
+				},
+				job = {"all"},
+				distance = 1.5
+		})
+	end
 	while true do
 		Citizen.Wait(1)
-		local vehPos = GetEntityCoords(vehicle)
-		for k,v in pairs(spots) do
-			local distance = (GetDistanceBetweenCoords(coords, vector3(v.pos.x, v.pos.y, v.pos.z), true))
-			if distance < 4.0 then
-				if not v.done then 
-					DrawText3Ds(v.pos.x, v.pos.y, v.pos.z, Lang['analyze_here'])
-					if IsControlJustPressed(0, 38) and distance < 1.0 then
-						if k == 2 then 
-							SetEntityHeading(player, GetEntityHeading(vehicle))
-							Citizen.Wait(500)
-						else
-							TaskTurnPedToFaceEntity(player, vehicle, 1.0)
-							Citizen.Wait(1000)
-						end
-						TaskStartScenarioInPlace(player, v.scenario, 0, true)
-						exports['progressBars']:startUI(2500, Lang['progbar_analyzing_veh'])
-						Citizen.Wait(2500)
-						ClearPedTasks(player)
-						v.done = true
-					end
-				end
-			end
-		end
-		if spots[1].done and spots[2].done and spots[3].done and spots[4].done then 
+		if spotsD[1].done and spotsD[2].done and spotsD[3].done and spotsD[4].done then 
 			break
 		end
 	end
@@ -1690,83 +1734,89 @@ AddEventHandler('t1ger_mechanicjob:installBodyPartCL', function(id, val)
 			end
 			while true do 
 				Citizen.Wait(1)
-				distance = GetDistanceBetweenCoords(coords, vehCoords, false)
+				distance = #(coords - vehCoords)
 				if distance < 4.0 then
 					local findObj = GetClosestObjectOfType(vehCoords.x, vehCoords.y, vehCoords.z, 1.0, GetHashKey("prop_carjack"), false, false, false)
 					if DoesEntityExist(findObj) then
-						DrawText3Ds(vehCoords.x, vehCoords.y, vehCoords.z, Lang['install_body_part'])
-						if IsControlJustPressed(0, 47) and distance < 1.5 then
-							installingPart = true
-							local plate = GetVehicleNumberPlateText(vehicle):gsub("^%s*(.-)%s*$", "%1")
-							if id == 1 then
-								for i = 0, (GetNumberOfVehicleDoors(vehicleData[plate].entity) - 2) do
-									if vehicleData[plate].report.doors[i + 1] == true then
-										vehicleData[plate].report.doors[i + 1] = false
-										TriggerServerEvent('t1ger_mechanicjob:syncVehicleBodySV', plate)
-										TriggerServerEvent('t1ger_mechanicjob:removeItem', val.item, 1)
-										break
-									else
-										if tonumber(i + 1) == tonumber(GetNumberOfVehicleDoors(vehicleData[plate].entity) - 2) then 
-											exports['mythic_notify']:DoHudText('error',Lang['all_doors_intact'])
-											break
-										end
-									end
-								end
-							end
-							if id == 2 then 
-								if vehicleData[plate].report.doors[4+1] == true then
-									vehicleData[plate].report.doors[4+1] = false
-									TriggerServerEvent('t1ger_mechanicjob:syncVehicleBodySV', plate)
-									TriggerServerEvent('t1ger_mechanicjob:removeItem', val.item, 1)
-								else
-									exports['mythic_notify']:DoHudText('error',Lang['hood_already_installed'])
-								end
-							end
-							if id == 3 then 
-								if vehicleData[plate].report.doors[5+1] == true then
-									vehicleData[plate].report.doors[5+1] = false
-									TriggerServerEvent('t1ger_mechanicjob:syncVehicleBodySV', plate)
-									TriggerServerEvent('t1ger_mechanicjob:removeItem', val.item, 1)
-								else
-									exports['mythic_notify']:DoHudText('error', Lang['trunk_already_installed'])
-								end
-							end
-							if id == 4 then 
-								for i = 0, (GetVehicleNumberOfWheels(vehicleData[plate].entity) - 1) do
-									if GetVehicleWheelXOffset(vehicleData[plate].entity, i) == 9999.0 then
-										if vehicleData[plate].report.wheels[i + 1] == true then 
-											vehicleData[plate].report.wheels[i + 1] = false
+						--DrawText3Ds(vehCoords.x, vehCoords.y, vehCoords.z, Lang['install_body_part'])
+						if distance < 1.5 then
+							exports["np-ui"]:showInteraction('[G] to install part', 'installBody')
+						
+							if IsControlJustPressed(0, 47) then
+								installingPart = true
+								local plate = GetVehicleNumberPlateText(vehicle):gsub("^%s*(.-)%s*$", "%1")
+								if id == 1 then
+									for i = 0, (GetNumberOfVehicleDoors(vehicleData[plate].entity) - 2) do
+										if vehicleData[plate].report.doors[i + 1] == true then
+											vehicleData[plate].report.doors[i + 1] = false
 											TriggerServerEvent('t1ger_mechanicjob:syncVehicleBodySV', plate)
 											TriggerServerEvent('t1ger_mechanicjob:removeItem', val.item, 1)
 											break
-										end
-									else
-										if tonumber(i + 1) == tonumber(GetVehicleNumberOfWheels(vehicleData[plate].entity) - 1) then
-											exports['mythic_notify']:DoHudText('error', Lang['all_wheels_intact'])
-											SetVehicleCanDeformWheels(vehicle, true)
+										else
+											if tonumber(i + 1) == tonumber(GetNumberOfVehicleDoors(vehicleData[plate].entity) - 2) then 
+												exports['mythic_notify']:DoHudText('error',Lang['all_doors_intact'])
+												break
+											end
 										end
 									end
 								end
-							end
-							DetachEntity(carryObj, 1, 0)
-							ESX.Game.DeleteObject(carryObj)
-							carryObj = nil
-							ClearPedTasks(player)
-							Citizen.Wait(100)
+								if id == 2 then 
+									if vehicleData[plate].report.doors[4+1] == true then
+										vehicleData[plate].report.doors[4+1] = false
+										TriggerServerEvent('t1ger_mechanicjob:syncVehicleBodySV', plate)
+										TriggerServerEvent('t1ger_mechanicjob:removeItem', val.item, 1)
+									else
+										exports['mythic_notify']:DoHudText('error',Lang['hood_already_installed'])
+									end
+								end
+								if id == 3 then 
+									if vehicleData[plate].report.doors[5+1] == true then
+										vehicleData[plate].report.doors[5+1] = false
+										TriggerServerEvent('t1ger_mechanicjob:syncVehicleBodySV', plate)
+										TriggerServerEvent('t1ger_mechanicjob:removeItem', val.item, 1)
+									else
+										exports['mythic_notify']:DoHudText('error', Lang['trunk_already_installed'])
+									end
+								end
+								if id == 4 then 
+									for i = 0, (GetVehicleNumberOfWheels(vehicleData[plate].entity) - 1) do
+										if GetVehicleWheelXOffset(vehicleData[plate].entity, i) == 9999.0 then
+											if vehicleData[plate].report.wheels[i + 1] == true then 
+												vehicleData[plate].report.wheels[i + 1] = false
+												TriggerServerEvent('t1ger_mechanicjob:syncVehicleBodySV', plate)
+												TriggerServerEvent('t1ger_mechanicjob:removeItem', val.item, 1)
+												break
+											end
+										else
+											if tonumber(i + 1) == tonumber(GetVehicleNumberOfWheels(vehicleData[plate].entity) - 1) then
+												exports['mythic_notify']:DoHudText('error', Lang['all_wheels_intact'])
+												SetVehicleCanDeformWheels(vehicle, true)
+											end
+										end
+									end
+								end
+								DetachEntity(carryObj, 1, 0)
+								ESX.Game.DeleteObject(carryObj)
+								carryObj = nil
+								ClearPedTasks(player)
+								Citizen.Wait(100)
 
-							local progression = GetBodyRepairProgression(vehicle)
-							print(progression)
-							exports['mythic_notify']:DoHudText('inform', "Progression: ["..progression.."/100]")
-							if progression >= 100 then 
-								SetVehicleCanDeformWheels(vehicle, true)
-								Wait(100)
-								SetVehicleFixed(vehicle)
-								SetVehicleEngineHealth(vehicle, vehicleData[plate].report.engine)
-								SetVehicleBodyHealth(vehicle, 1000.0)
-								vehAnalysed = false
-								exports['mythic_notify']:DoHudText('success', Lang['all_body_repairs_done'])
+								local progression = GetBodyRepairProgression(vehicle)
+								print(progression)
+								exports['mythic_notify']:DoHudText('inform', "Progression: ["..progression.."/100]")
+								if progression >= 100 then 
+									SetVehicleCanDeformWheels(vehicle, true)
+									Wait(100)
+									SetVehicleFixed(vehicle)
+									SetVehicleEngineHealth(vehicle, vehicleData[plate].report.engine)
+									SetVehicleBodyHealth(vehicle, 1000.0)
+									vehAnalysed = false
+									exports['mythic_notify']:DoHudText('success', Lang['all_body_repairs_done'])
+								end
+								break
 							end
-							break
+						else
+							exports["np-ui"]:hideInteraction('[G] '..Lang['install_body_part'], 'installBody')
 						end
 					else
 						exports['mythic_notify']:DoHudText('error', Lang['raise_and_analyze'])
