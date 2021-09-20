@@ -78,7 +78,7 @@ function bossMenuFunction(k,v,distToBoss)
 		local mk = Config.MarkerSettings
 		if distToBoss <= 10.0 and distToBoss >= 3.0 then
 			if mk.enable then
-				DrawMarker(mk.type, v.menuPos[1], v.menuPos[2], v.menuPos[3], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mk.scale.x, mk.scale.y, mk.scale.z, mk.color.r, mk.color.g, mk.color.b, mk.color.a, false, true, 2, false, false, false, false)	
+				--DrawMarker(mk.type, v.menuPos[1], v.menuPos[2], v.menuPos[3], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mk.scale.x, mk.scale.y, mk.scale.z, mk.color.r, mk.color.g, mk.color.b, mk.color.a, false, true, 2, false, false, false, false)	
 			end
 			exports["np-ui"]:hideInteraction('manageShop')
 		elseif distToBoss <= 2.0 then
@@ -490,7 +490,7 @@ function storageMenuFunction(k,v,distToStorage)
 		local mk = Config.MarkerSettings
 		if distToStorage <= 10.0 and distToStorage >= 2.0 then
 			if mk.enable then
-				DrawMarker(mk.type, v.storage[1], v.storage[2], v.storage[3], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mk.scale.x, mk.scale.y, mk.scale.z, mk.color.r, mk.color.g, mk.color.b, mk.color.a, false, true, 2, false, false, false, false)
+				--DrawMarker(mk.type, v.storage[1], v.storage[2], v.storage[3], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mk.scale.x, mk.scale.y, mk.scale.z, mk.color.r, mk.color.g, mk.color.b, mk.color.a, false, true, 2, false, false, false, false)
 			end
 			exports["np-ui"]:hideInteraction('storage')
 		elseif distToStorage <= 2.0 then
@@ -795,8 +795,8 @@ Citizen.CreateThread(function()
 		Citizen.Wait(1)
 		if PlayerData.job and PlayerData.job.name == 'mechanic' then
 			for num,shop in pairs(Config.MechanicShops) do
-				local shopDist = GetDistanceBetweenCoords(coords.x, coords.y, coords.z, shop.menuPos[1], shop.menuPos[2], shop.menuPos[3], false)
-				if shopDist < 20.0 then
+				local shopDist = #(coords-vector3(shop.lifts[1].entry[1], shop.lifts[1].entry[2], shop.lifts[1].entry[3]))
+				if shopDist < 25.0 then
 					for k,v in pairs(shop.lifts) do
 						local mk = v.marker
 						-- Attach Vehicle to Lift:

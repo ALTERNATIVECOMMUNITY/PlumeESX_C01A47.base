@@ -60,6 +60,33 @@ Config.MechanicShops = {
 			},
 		},
 	},
+	[3] = { 
+		menuPos = {153.21,-3014.53,7.03},
+		price = 265000,
+		storage = {121.70,-3029.07,7.03},
+		workbench = {134.78,-3050.58,7.03},
+		storageID = 'mechShop3Storage',
+		lifts = {
+			[1] = {
+				entry = {130.09,-3034.86,7.03,91.35},
+				pos = {125.34,-3034.83,7.04,91.35},
+				control = {125.05,-3032.27,7.04,95.71},
+				marker = {enable = true, drawDist = 8.0, type = 36, scale = {x = 0.4, y = 0.4, z = 0.4}, color = {r = 240, g = 52, b = 52, a = 100}},
+				minValue = 6.04, maxValue = 7.95,
+				currentVeh = nil,
+				inUse = false
+			},
+			[2] = {
+				entry = {130.09,-3041.22,7.04,95.71},
+				pos = {125.34,-3041.04,7.04,95.71},
+				control = {124.98,-3038.31,7.04,95.71},
+				marker = {enable = true, drawDist = 8.0, type = 36, scale = {x = 0.4, y = 0.4, z = 0.4}, color = {r = 240, g = 52, b = 52, a = 100}},
+				minValue = 6.04, maxValue = 7.95,
+				currentVeh = nil,
+				inUse = false
+			},
+		},
+	},
 }
 
 -- Blip Settings:
