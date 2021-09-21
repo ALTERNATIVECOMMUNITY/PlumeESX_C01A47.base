@@ -68,8 +68,8 @@ Config.MechanicShops = {
 		storageID = 'mechShop3Storage',
 		lifts = {
 			[1] = {
-				entry = {130.09,-3034.86,7.03,91.35},
-				pos = {125.34,-3034.83,7.04,91.35},
+				entry = {130.09,-3034.86,7.03,95.71},
+				pos = {125.34,-3034.83,7.04,95.71},
 				control = {125.05,-3032.27,7.04,95.71},
 				marker = {enable = true, drawDist = 8.0, type = 36, scale = {x = 0.4, y = 0.4, z = 0.4}, color = {r = 240, g = 52, b = 52, a = 100}},
 				minValue = 6.04, maxValue = 7.95,

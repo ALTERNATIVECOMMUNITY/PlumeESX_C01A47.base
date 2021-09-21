@@ -8,14 +8,14 @@ health = {}
 index = nil
 spotsD = {}
 spotsE = {}
-
+  
 Citizen.CreateThread(function()
     while true do
 		player = GetPlayerPed(-1)
 		coords = GetEntityCoords(player)
         curVehicle = GetVehiclePedIsIn(player, false)
         driver = GetPedInVehicleSeat(curVehicle, -1)
-        Citizen.Wait(500)
+		Citizen.Wait(500)
     end
 end)
 
@@ -1342,31 +1342,41 @@ function InspectVehicleFunction()
 			if GetEntityModel(GetHashKey(vehicle)) == GetEntityModel(GetHashKey(vehOnLift[plate].entity)) then 
 				local d1,d2 = GetModelDimensions(GetEntityModel(vehicle))
 				local heading = GetEntityHeading(vehicle)
+				local bIndexes = {GetEntityBoneIndexByName(vehicle, 'seat_dside_f'), GetEntityBoneIndexByName(vehicle, 'engine'), GetEntityBoneIndexByName(vehicle, 'seat_pside_f')}
 				spotsE = {
-					[1] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, d2.x,0.0,0.0), scenario = "WORLD_HUMAN_CLIPBOARD", done = false},
-					[2] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, 0.0,d2.y-0.15,0.0), scenario = "WORLD_HUMAN_CLIPBOARD", done = false},
-					[3] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, d1.x,0.0,0.0), scenario = "WORLD_HUMAN_CLIPBOARD", done = false},
+					[1] = {pos = GetWorldPositionOfEntityBone(vehicle, bIndexes[1]), scenario = "WORLD_HUMAN_WELDING", done = false},
+					[2] = {pos = GetWorldPositionOfEntityBone(vehicle, bIndexes[2]), scenario = "WORLD_HUMAN_VEHICLE_MECHANIC", done = false},
+					[3] = {pos = GetWorldPositionOfEntityBone(vehicle, bIndexes[3]), scenario = "WORLD_HUMAN_MAID_CLEAN", done = false},
 				}
 				for i, v in pairs(spotsE) do
-					local z = v.pos.z -0.3 
-					exports["bt-target"]:AddBoxZone("spotE"..i, vector3(v.pos.x, v.pos.y, z), 0.4, 0.4, {
-						name="spotE"..i,
-						heading=heading,
-						debugPoly=true,
-						minZ=z-0.1,
-						maxZ=z+0.1
-						}, {
-							options = {
-								{
-									event = "t1ger_mechanicjob:fetchEngineDmgPeak",
-									icon = "fas fa-wrench",
-									label = "Inspect",
-									key = {i, vehicle ,v}
+					if bIndexes[i] ~= -1 then
+						local z = v.pos.z
+						if i == 1 or i == 3 then
+							z = z + 0.2
+						end
+						exports["bt-target"]:AddBoxZone("spotE"..i, vector3(v.pos.x, v.pos.y, z), 1.0, 1.0, {
+							name="spotE"..i,
+							heading=heading,
+							debugPoly=true,
+							minZ=z-0.2,
+							maxZ=z+0.2
+							}, {
+								options = {
+									{
+										event = "t1ger_mechanicjob:fetchEngineDmgPeak",
+										icon = "fas fa-wrench",
+										label = "Inspect",
+										key = {i, vehicle ,v}
+									},
 								},
-							},
-							job = {"all"},
-							distance = 2.5
-					})
+								job = {"all"},
+								distance = 4.0
+							
+						})
+					else 
+						print('spotE '..i..'=true')
+						spotE[i].done = true
+					end
 				end
 				local inspectingVeh = false
 				while true do
@@ -1585,7 +1595,6 @@ function UseTheJackFunction(vehicle)
 				isJackRaised = true
 			end
 			usingJack = false
-			exports['progressBars']:closeUI()
 			break
 		end
 	end
@@ -1613,32 +1622,42 @@ function FetchVehicleBodyDamageReport(vehicle, plate)
 	-- Interact To Veh Part:
 	local d1,d2 = GetModelDimensions(GetEntityModel(vehicle))
 	local heading = GetEntityHeading(vehicle)
+	local bIndexes = {GetEntityBoneIndexByName(vehicle, 'seat_dside_f'), GetEntityBoneIndexByName(vehicle, 'engine'), GetEntityBoneIndexByName(vehicle, 'seat_pside_f'), GetEntityBoneIndexByName(vehicle, 'boot') }
 	spotsD = {
-		[1] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, d2.x,0.0,0.0), scenario = "WORLD_HUMAN_WELDING", done = false},
-		[2] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, 0.0,d2.y-0.15,0.0), scenario = "WORLD_HUMAN_VEHICLE_MECHANIC", done = false},
-		[3] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, d1.x,0.0,0.0), scenario = "WORLD_HUMAN_MAID_CLEAN", done = false},
-		[4] = {pos = GetOffsetFromEntityInWorldCoords(vehicle, 0.0,d1.y+0.08,0.0), scenario = "WORLD_HUMAN_CLIPBOARD", done = false},
+		[1] = {pos = GetWorldPositionOfEntityBone(vehicle, bIndexes[1]), scenario = "WORLD_HUMAN_WELDING", done = false},
+		[2] = {pos = GetWorldPositionOfEntityBone(vehicle, bIndexes[2]), scenario = "WORLD_HUMAN_VEHICLE_MECHANIC", done = false},
+		[3] = {pos = GetWorldPositionOfEntityBone(vehicle, bIndexes[3]), scenario = "WORLD_HUMAN_MAID_CLEAN", done = false},
+		[4] = {pos = GetWorldPositionOfEntityBone(vehicle, bIndexes[4]), scenario = "WORLD_HUMAN_CLIPBOARD", done = false},
 	}
 	for i, v in pairs(spotsD) do
-		local z = v.pos.z -0.3 
-		exports["bt-target"]:AddBoxZone("spot"..i, vector3(v.pos.x, v.pos.y, z), 0.4, 0.4, {
-			name="spot"..i,
-			heading=heading,
-			debugPoly=true,
-			minZ=z-0.1,
-			maxZ=z+0.1
-			}, {
-				options = {
-					{
-						event = "t1ger_mechanicjob:fetchBodyDmgPeak",
-						icon = "fas fa-wrench",
-						label = "Inspect",
-						key = {i, vehicle ,v}
+		if bIndexes[i] ~= -1 then
+			local z = v.pos.z
+			if i == 1 or i == 3 then
+				z = z + 0.2
+			end
+			exports["bt-target"]:AddBoxZone("spot"..i, vector3(v.pos.x, v.pos.y, z), 1.0, 1.0, {
+				name="spot"..i,
+				heading=heading,
+				debugPoly=true,
+				minZ=z-0.2,
+				maxZ=z+0.2
+				}, {
+					options = {
+						{
+							event = "t1ger_mechanicjob:fetchBodyDmgPeak",
+							icon = "fas fa-wrench",
+							label = "Inspect",
+							key = {i, vehicle ,v}
+						},
 					},
-				},
-				job = {"all"},
-				distance = 1.5
-		})
+					job = {"all"},
+					distance = 4.0
+				
+			})
+		else 
+			print('spotD '..i..'=true')
+			spotD[i].done = true
+		end
 	end
 	while true do
 		Citizen.Wait(1)

@@ -337,6 +337,9 @@ function StoreOwnedPoliceMenu()
 		vehicleProps['doors'] = doors
 		vehicleProps['windows'] = windows
 		vehicleProps['dirt'] = GetVehicleDirtLevel(vehicle)
+		if vehicleProps.bodyHealth == 1000.0 then
+			vehicleProps.bodyHealth = 999.9
+		end
 		ESX.TriggerServerCallback('esx_advancedgarage:storeVehicle', function(valid)
 			if valid then
 					StoreVehicle(vehicle, vehicleProps, currentLoc)	
@@ -964,6 +967,7 @@ function SpawnVehicle(vehicle, plate, fuel, vector, heading)
 			ESX.Game.SetVehicleProperties(callback_vehicle, vehicle)
 			SetVehRadioStation(callback_vehicle, "OFF")
 			SetVehicleBodyHealth(callback_vehicle, vehicle.bodyHealth)
+			print(vehicle.bodyHealth)
 			doCarDamages(vehicle.engineHealth, vehicle.bodyHealth, callback_vehicle, vehicle.tyre, vehicle.doors, vehicle.windows)
 			Citizen.Wait(100)
 			SetVehicleUndriveable(callback_vehicle, false)
@@ -1017,9 +1021,6 @@ function doCarDamages(eh, bh, veh, tyres, doors, windows)
 				end
 			end
 		end
-        if body < 1000 then
-           	SetVehicleBodyHealth(currentVehicle, body)
-        end
     end
 end
 -- Check Vehicles
@@ -1198,3 +1199,8 @@ function RefreshJobBlips()
 		end
 	end
 end
+
+RegisterCommand("getVehEngineHealth", function()
+	local veh = GetVehiclePedIsIn(PlayerPedId(), false)
+	print(GetVehicleEngineHealth(veh)..' E : B'..GetVehicleBodyHealth(veh))
+end)

@@ -494,6 +494,7 @@ ESX.RegisterServerCallback('esx_advancedgarage:getOwnedVehicles', function(sourc
 			}, function(data)
 				for _,v in pairs(data) do
 					local vehicle = json.decode(v.vehicle)
+					print(v.vehicle.bodyHealth)
 					table.insert(ownedSupers, {vehicle = vehicle, plate = v.plate, vehName = v.name, fuel = v.fuel, stored = v.stored})
 				end
 				cb(ownedSupers)
