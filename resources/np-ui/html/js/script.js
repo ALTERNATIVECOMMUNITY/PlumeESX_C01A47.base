@@ -335,7 +335,7 @@ window.addEventListener('message',function(event){
             }
             $(".direction").find(".image").attr('style', 'transform: translate3d(' + ((-1* msg.data.heading)+ -235) + 'px, 0px, 0px)'); //+ -300
             if (msg.data.speed) {
-                setProgressSpeed(msg.data.speed,".progress-speed")
+                setProgressSpeed(msg.data.speed - 1,".progress-speed")
             }
             
             break;
