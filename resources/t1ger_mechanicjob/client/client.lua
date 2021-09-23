@@ -8,8 +8,24 @@ health = {}
 index = nil
 spotsD = {}
 spotsE = {}
+
+
   
 Citizen.CreateThread(function()
+	exports["bt-polyzone"]:AddBoxZone("tunah", vector3(136.9,-3029.97,7.04), 32, 30, {
+        name="tunah",
+		debugPoly = false,
+        heading=93.1,
+        minZ=6.0,
+        maxZ=8.0
+    })
+	exports["bt-polyzone"]:AddBoxZone("auto", vector3(537.82,-182.79,54.43), 20, 20, {
+        name="auto",
+		debugPoly = false,
+        heading=0,
+        minZ=53.0,
+        maxZ=56.0
+    })
     while true do
 		player = GetPlayerPed(-1)
 		coords = GetEntityCoords(player)
@@ -426,52 +442,6 @@ function BuyMechShopMenu(id,val)
 		}
 	}
 	exports["np-ui"]:showContextMenu(menuOptions)
-	--[[
-	local elements = {
-		{ label = Lang['button_yes'], value = "confirm_purchase" },
-		{ label = Lang['button_no'], value = "decline_purchase" },
-	}
-	ESX.UI.Menu.Open('default', GetCurrentResourceName(), "mech_shop_purchase",
-		{
-			title    = "Confirm | Price: $"..math.floor(val.price),
-			align    = "center",
-			elements = elements
-		},
-	function(data, menu)
-		if(data.current.value == 'confirm_purchase') then
-
-			ESX.UI.Menu.Open('dialog', GetCurrentResourceName(), 'mech_shop_choose_name', {
-				title = "Enter Name For Mech Shop"
-			}, function(data2, menu2)
-				menu2.close()
-				local shopName = tostring(data2.value)
-				ESX.TriggerServerCallback('t1ger_mechanicjob:buyMechShop', function(purchased)
-					if purchased then
-						ShowNotifyESX((Lang['mech_shop_bought']):format(math.floor(val.price)))
-						TriggerServerEvent('t1ger_mechanicjob:fetchMechShops')
-						menu.close()
-						bossMenu = nil
-					else
-						ShowNotifyESX(Lang['not_enough_money'])
-						menu.close()
-						bossMenu = nil
-					end
-				end, id, val, shopName)
-			end,
-			function(data2, menu2)
-				menu2.close()	
-			end)
-		end
-		if(data.current.value == 'decline_purchase') then
-			menu.close()
-			bossMenu = nil
-		end
-		menu.close()
-	end, function(data, menu)
-		menu.close()
-		bossMenu = nil
-	end)
-	]]--
 end
 -- ## BOSS MENU END ## --
 
@@ -515,125 +485,6 @@ end
 function MechShopStorageMenu(id, val)
 	print(Config.MechanicShops[id].storageID)
 	exports["mf-inventory"]:openOtherInventory(Config.MechanicShops[id].storageID)
-	--[[
-    if not IsEntityPlayingAnim(player, 'mini@repair', 'fixing_a_player', 3) then
-        LoadAnim('mini@repair') 
-        TaskPlayAnim(player, 'mini@repair', 'fixing_a_player', 8.0, -8, -1, 49, 0, 0, 0, 0)
-    end
-	local keyPressed = false
-    ESX.UI.Menu.CloseAll()
-	local elements = {
-		{ label = Lang['storage_deposit'], value = "storage_deposit" },
-		{ label = Lang['storage_withdraw'], value = "storage_withdraw" },
-	}
-	ESX.UI.Menu.Open('default', GetCurrentResourceName(), "mech_shop_storage_menu",
-		{
-			title    = "Storage ["..id.."]",
-			align    = "center",
-			elements = elements
-		},
-	function(data, menu)
-		if(data.current.value == 'storage_deposit') then
-			ESX.TriggerServerCallback('t1ger_mechanicjob:getUserInventory', function(inventory)
-				local invItems = {}
-				for k,v in pairs(inventory) do
-					if v.count > 0 then 
-						table.insert(invItems, {label = v.count.."x "..v.label, value = v.name})
-					end
-				end
-				ESX.UI.Menu.Open('default', GetCurrentResourceName(), "mech_shop_storage_deposit",
-					{
-						title    = "User Inventory",
-						align    = "center",
-						elements = invItems
-					},
-				function(data2, menu2)
-					menu2.close()
-					ESX.UI.Menu.Open('dialog', GetCurrentResourceName(), 'storage_deposit_dialog', {title = "Enter Amount"}, function(data3, menu3)
-                        local count = tonumber(data3.value)
-
-                        if count == nil then
-                            ShowNotifyESX(Lang['invalid_amount'])
-                        else
-							if count > 0 then
-								menu3.close()
-								if not keyPressed then
-									keyPressed = true
-									TriggerServerEvent('t1ger_mechanicjob:depositItem', data2.current.value, tonumber(data3.value), id)
-								end
-								Wait(500)
-								MechShopStorageMenu(id, val)
-                            else
-                                ShowNotifyESX(Lang['invalid_amount'])
-                            end
-                        end
-                    end, function(data3, menu3)
-                        menu3.close()
-						MechShopStorageMenu(id, val)
-                    end)
-				end, function(data2, menu2)
-                    menu2.close()
-					MechShopStorageMenu(id, val)
-                end)
-			end)
-		end
-		if(data.current.value == 'storage_withdraw') then
-			ESX.TriggerServerCallback('t1ger_mechanicjob:getStorageInventory', function(inventory)
-				if inventory ~= nil then 
-					local invItems = {}
-					for k,v in pairs(inventory) do
-						table.insert(invItems, {label = v.count.."x "..v.label, value = v.item, amount = v.count})
-					end
-					ESX.UI.Menu.Open('default', GetCurrentResourceName(), "mech_shop_storage_withdraw",
-						{
-							title    = "Storage Inventory",
-							align    = "center",
-							elements = invItems
-						},
-					function(data2, menu2)
-						menu2.close()
-						ESX.UI.Menu.Open('dialog', GetCurrentResourceName(), 'storage_withdraw_dialog', {title = "Enter Amount"}, function(data3, menu3)
-							local count = tonumber(data3.value)
-
-							if count == nil then
-								ShowNotifyESX(Lang['invalid_amount'])
-							else
-								if count > 0 then
-									menu3.close()
-									if count <= data2.current.amount then
-										if not keyPressed then 
-											keyPressed = true
-											TriggerServerEvent('t1ger_mechanicjob:withdrawItem', data2.current.value, tonumber(data3.value), id)
-										end
-									else
-										ShowNotifyESX(Lang['too_high_count'])
-									end
-									Wait(500)
-									MechShopStorageMenu(id, val)
-								else
-									ShowNotifyESX(Lang['invalid_amount'])
-								end
-							end
-						end, function(data3, menu3)
-							menu3.close()
-							MechShopStorageMenu(id, val)
-						end)
-					end, function(data2, menu2)
-						menu2.close()
-						MechShopStorageMenu(id, val)
-					end)
-				else
-					ShowNotifyESX(Lang['storage_inv_empty'])
-				end
-			end, id)
-		end
-		menu.close()
-	end, function(data, menu)
-		menu.close()
-		storageMenu = nil
-		ClearPedSecondaryTask(player)
-	end)
-	]]--
 end
 -- ## STORAGE MENU END ## --
 
@@ -696,69 +547,6 @@ function MechShopWorkbenchMenu(id,val)
 		menuData[i] = {title = v.label, description = description, action = 't1ger_mechanicjob:sendCraft', key = v}
 	end
 	exports["np-ui"]:showContextMenu(menuData)
-	--[[
-    if not IsEntityPlayingAnim(player, 'mini@repair', 'fixing_a_player', 3) then
-        LoadAnim('mini@repair') 
-        TaskPlayAnim(player, 'mini@repair', 'fixing_a_player', 8.0, -8, -1, 49, 0, 0, 0, 0)
-    end
-	
-	local keyPressed = false
-	ESX.UI.Menu.CloseAll()
-	
-	local elements = {}
-	for k,v in ipairs(Config.Workbench) do
-		table.insert(elements, {label = v.label, item = v.item, recipe = v.recipe})
-	end
-
-	ESX.UI.Menu.Open('default', GetCurrentResourceName(), "mech_workbench_menu",
-		{
-			title    = "Select Craftable",
-			align    = "center",
-			elements = elements
-		},
-	function(data, menu)
-		local selected = data.current
-		local craftOptions = {
-			{ label = Lang['craft_item'], value = "craft_item" },
-			{ label = Lang['view_recipe'], value = "view_recipe" },
-		}
-		ESX.UI.Menu.Open('default', GetCurrentResourceName(), "mech_workbench_options_menu",
-			{
-				title    = "Craftable: "..data.current.label,
-				align    = "center",
-				elements = craftOptions
-			},
-		function(data2, menu2)
-			if data2.current.value == "craft_item" then 
-				menu2.close()
-				if not keyPressed then 
-					keyPressed = true
-					exports['progressBars']:startUI((Config.CraftTime * 1000), (Lang['crafting_item']:format(string.upper(selected.label))))
-					Citizen.Wait((Config.CraftTime * 1000))
-					TriggerServerEvent('t1ger_mechanicjob:craftItem', selected.label, selected.item, selected.recipe, id, val)
-					Wait(500)
-					ESX.UI.Menu.CloseAll()
-					workbenchMenu = nil
-					ClearPedSecondaryTask(player)
-				else
-					MechShopWorkbenchMenu(id,val)
-					ShowNotifyESX(Lang['crafting_in_progress'])
-				end
-			elseif data2.current.value == "view_recipe" then
-				menu2.close()
-				ViewCraftingRecipe(selected.label, selected.item, selected.recipe, id, val)
-			end
-		end, function(data2, menu2)
-            menu2.close()
-			MechShopWorkbenchMenu(id, val)
-        end)
-		menu.close()
-	end, function(data, menu)
-		menu.close()
-		workbenchMenu = nil
-		ClearPedSecondaryTask(player)
-	end)
-	]]--
 end
 
 -- View Recipe Function:
@@ -882,25 +670,21 @@ Citizen.CreateThread(function()
 	end
 end)
 
--- Mechanic Action Thread:
-Citizen.CreateThread(function()
-	while true do
-		Citizen.Wait(5)
-		if IsControlJustPressed(0, Config.KeyToMechActionMenu) then
-			if PlayerData.job and PlayerData.job.name == 'mechanic' then
-				OpenMechanicActionMenu()
-			end
-		end
-	end
-end)
 --Really unforunate that you dont have a switch case lua :(
 RegisterNetEvent('t1ger_mechanicjob:mechActionMenu')
 AddEventHandler('t1ger_mechanicjob:mechActionMenu', function(k) 
 	local key = k
+	local vehicle = GetClosestVehicle(coords.x, coords.y, coords.z, 5.0, 0, 71)
+	local vehCoords = GetEntityCoords(vehicle, 1)
+	local findObj = GetClosestObjectOfType(vehCoords.x, vehCoords.y, vehCoords.z, 1.0, GetHashKey("prop_carjack"), false, false, false)
 	if key == 'Billing' then
 		createBill()
 	elseif key == 'CarJack' then
-		CarJackFunction('interact')
+		--CarJackFunction('interact')
+		if DoesEntityExist(findObj) then
+			isJackRaised = true	
+		end
+			UseTheJackFunction(vehicle)		
 	elseif key == 'InspectVehicle' then
 		InspectVehicleFunction()
 	elseif key == 'Engine' then
@@ -922,7 +706,20 @@ AddEventHandler('t1ger_mechanicjob:mechActionMenu', function(k)
 	elseif key == 'engineRepair' then 
 		RepairVehicleEngine()
 	elseif key == 'bodyRepair' then 
-		CarJackFunction('analyse')
+			if vehicle ~= 0 then
+				if not vehAnalysed then
+					local plate = GetVehicleNumberPlateText(vehicle):gsub("^%s*(.-)%s*$", "%1")
+					vehicleData[plate] = {report = {}, entity = nil}
+					wheelProperties[plate] = {}
+					for i = 0, GetVehicleNumberOfWheels(vehicle) - 1 do
+						wheelProperties[plate][i + 1] = {
+							xOffset = GetVehicleWheelXOffset(vehicle, i),
+							yRotation = GetVehicleWheelYRotation(vehicle, i)
+						}
+					end
+					FetchVehicleBodyDamageReport(vehicle, plate)
+				end
+			end
 	elseif key == 'Road Cone' then 
 		carryObject(key)
 	elseif key == 'Engine Hoist' then 
@@ -1066,6 +863,11 @@ function OpenMechanicActionMenu()
 	end
 end
 
+RegisterNetEvent('t1ger_mechanicjob:mechActionContext')
+AddEventHandler('t1ger_mechanicjob:mechActionContext', function()
+	OpenMechanicActionMenu()
+	exports["bt-target"]:RemoveZone('MechMenu')
+end)
 
 
 Citizen.CreateThread( function()
@@ -1123,88 +925,95 @@ function PlayPickUpAnim()
 	TaskPlayAnim(PlayerPedId(), "random@domestic", "pickup_low", 5.0, 1.0, 1.0, 48, 0.0, 0, 0, 0)
 end
 
+RegisterNetEvent('t1ger_mechanicjob:RepairVehicleEngine')
+AddEventHandler('t1ger_mechanicjob:RepairVehicleEngine', function(vehicle)
+	-- inspect anim:
+	print(vehicle)
+	TaskTurnPedToFaceEntity(player, vehicle, 1.0)
+	Citizen.Wait(1000)
+	TaskStartScenarioInPlace(player, "WORLD_HUMAN_CLIPBOARD", 0, true)
+	exports['progressBars']:startUI(2000, "INSPECTING: ENGINE")
+	Citizen.Wait(2000)
+	ClearPedTasks(player)
+	local engineValue = (round((GetVehicleEngineHealth(vehicle)/10)/10,2))
+	if engineValue < 10.0 then 
+		local engineMaterials = {}
+		for g,h in pairs(Config.HealthParts) do 
+			if h.degName == "engine" then
+				local array = {}
+				engineMaterials = h.materials
+				for k,v in pairs(h.materials) do 
+					local item = Config.Materials[v.id]
+					table.insert(array, item.label)
+				end
+				local items = table.concat(array,", ")
+				local chatMsg = "^*"..h.label.." ^5[^6"..items.."^5] ^0» ^3"..round(engineValue,2).."^0 / ^210.0^0"
+				TriggerEvent('chat:addMessage', { args = { chatMsg } })
+			end
+		end
+
+		local engineAddVal = 0
+		local newValue = 10.0
+		local difference = (newValue - engineValue)
+		if difference > 0 and difference <= 1.0 then engineAddVal = 1.0 else engineAddVal = math.floor(difference + 1.0) end
+		ESX.TriggerServerCallback('t1ger_mechanicjob:getMaterialsForHealthRep', function(hasMaterials)
+			if hasMaterials then 
+				-- repair anim:
+				SetEntityHeading(player, GetEntityHeading(vehicle))
+				Citizen.Wait(500)
+				TaskStartScenarioInPlace(player, "WORLD_HUMAN_VEHICLE_MECHANIC", 0, true)
+				exports['progressBars']:startUI(3500, "REPAIRING: ENGINE")
+				Citizen.Wait(3500)
+				SetVehicleEngineHealth(vehicle, 1000.0)
+				ClearPedTasks(player)
+			else
+				exports['mythic_notify']:DoHudText('error', Lang['need_more_materials'])
+			end
+		end, plate, "engine", engineMaterials, 10.0, engineAddVal, vehOnLift)
+	else
+		exports['mythic_notify']:DoHudText('error', "Engine is fully functional")
+	end
+	exports["bt-target"]:RemoveZone('spotER')	
+end)
+
 function RepairVehicleEngine()
 	local vehicle = GetClosestVehicle(coords.x, coords.y, coords.z, 5.0, 0, 71)
 	local plate = GetVehicleNumberPlateText(vehicle):gsub("^%s*(.-)%s*$", "%1")
 	local repairingEngine = false
 	if vehicle ~= 0 then 
 		if vehOnLift[plate] ~= nil then 
+			local heading = GetEntityHeading(vehicle)
 			if GetEntityModel(GetHashKey(vehicle)) == GetEntityModel(GetHashKey(vehOnLift[plate].entity)) then 
 				local d1,d2 = GetModelDimensions(GetEntityModel(vehicle))
-				local enginePos = GetOffsetFromEntityInWorldCoords(vehicle, 0.0,d2.y+0.2,0.0)
-				local distance = (GetDistanceBetweenCoords(coords, vector3(enginePos.x, enginePos.y, enginePos.z), true)) 
+				local bIndex = GetEntityBoneIndexByName(vehicle, 'engine')
+				local spot = {pos = GetWorldPositionOfEntityBone(vehicle, bIndex), scenario = "WORLD_HUMAN_VEHICLE_MECHANIC", done = false}
 
-				while true do 
-					Citizen.Wait(1)
-					distance = #(coords-vector3(enginePos.x, enginePos.y, enginePos.z))
-					if distance < 5.0 then
-						--DrawText3Ds(enginePos.x, enginePos.y, enginePos.z, Lang['repair_engine'])
-						exports["np-ui"]:showInteraction('[E] to repair engine', 'engineR')
-						if IsControlJustPressed(0, 38) and distance < 1.0 then
-							exports["np-ui"]:hideInteraction('engineR')
-							-- inspect anim:
-							TaskTurnPedToFaceEntity(player, vehicle, 1.0)
-							Citizen.Wait(1000)
-							TaskStartScenarioInPlace(player, "WORLD_HUMAN_CLIPBOARD", 0, true)
-							exports['progressBars']:startUI(2000, "INSPECTING: ENGINE")
-							Citizen.Wait(2000)
-							ClearPedTasks(player)
-							local engineValue = (round((GetVehicleEngineHealth(vehicle)/10)/10,2))
-							if engineValue < 10.0 then 
-								local engineMaterials = {}
-								for g,h in pairs(Config.HealthParts) do 
-									if h.degName == "engine" then
-										local array = {}
-										engineMaterials = h.materials
-										for k,v in pairs(h.materials) do 
-											local item = Config.Materials[v.id]
-											table.insert(array, item.label)
-										end
-										local items = table.concat(array,", ")
-										local chatMsg = "^*"..h.label.." ^5[^6"..items.."^5] ^0» ^3"..round(engineValue,2).."^0 / ^210.0^0"
-										TriggerEvent('chat:addMessage', { args = { chatMsg } })
-									end
-								end
-								local engineAddVal = 0
-								local newValue = 10.0
-								local difference = (newValue - engineValue)
-								if difference > 0 and difference <= 1.0 then engineAddVal = 1.0 else engineAddVal = math.floor(difference + 1.0) end
-								ESX.TriggerServerCallback('t1ger_mechanicjob:getMaterialsForHealthRep', function(hasMaterials)
-									if hasMaterials then 
-										-- repair anim:
-										SetEntityHeading(player, GetEntityHeading(vehicle))
-										Citizen.Wait(500)
-										TaskStartScenarioInPlace(player, "WORLD_HUMAN_VEHICLE_MECHANIC", 0, true)
-										exports['progressBars']:startUI(3500, "REPAIRING: ENGINE")
-										Citizen.Wait(3500)
-										SetVehicleEngineHealth(vehicle, 1000.0)
-										ClearPedTasks(player)
-									else
-										exports['mythic_notify']:DoHudText('error', Lang['need_more_materials'])
-									end
-								end, plate, "engine", engineMaterials, 10.0, engineAddVal, vehOnLift)
-							else
-								exports['mythic_notify']:DoHudText('error', "Engine is fully functional")
-							end
-							break
-						elseif IsControlJustPressed(0, 38) and distance >1.0 then
-							exports['mythic_notify']:DoHudText('error', "Move to the front of the vehicle")
-						end
-					end
-					if distance > 5.0 then 
-						exports["np-ui"]:hideInteraction('engineR')
-						repairingEngine = false
-						break
-					end
+				if bIndex == -1 then
+					print('bIndex nil')
+					spot = {pos = GetOffsetFromEntityInWorldCoords(vehicle, 0.0,d2.y+0.2,0.0), scenario = "WORLD_HUMAN_VEHICLE_MECHANIC", done = false}
 				end
-			else
-				print("veh not matched")
+				local z = spot.pos.z + 0.2
+				exports["bt-target"]:AddBoxZone("spotER", vector3(spot.pos.x, spot.pos.y, z), 1.0, 1.0, {
+					name="spotER",
+					heading=heading,
+					debugPoly=true,
+					minZ=z-0.2,
+					maxZ=z+0.2
+					}, {
+						options = {
+							{
+								event = "t1ger_mechanicjob:RepairVehicleEngine",
+								icon = "fas fa-wrench",
+								label = "Inspect",
+								key = vehicle
+							},
+						},
+						job = {"all"},
+						distance = 4.0
+						
+				})
 			end
-		else
-			exports['mythic_notify']:DoHudText('error', Lang['veh_must_be_on_lift'])
 		end
-	else
-		exports['mythic_notify']:DoHudText('error', Lang['no_vehicle_nearby'])
 	end
 end
 
@@ -1381,7 +1190,6 @@ function InspectVehicleFunction()
 				local inspectingVeh = false
 				while true do
 					Citizen.Wait(1)
-					local vehPos = GetEntityCoords(vehicle, 1)
 					if not inspectingVeh then
 						if spotsE[1].done and spotsE[2].done and spotsE[3].done then
 							inspectingVeh = true
@@ -1481,6 +1289,7 @@ function CarJackFunction(type)
 				--DrawText3Ds(door.x, door.y, door.z, "~r~[E]~s~ "..label)
 				exports["np-ui"]:showInteraction('[E] '..label, 'carjack')
 				if IsControlJustPressed(0, 38) and distance < 1.0 then
+					exports["np-ui"]:hideInteraction('carjack')
 					if isJackRaised then
 						if type == 'interact' then
 							UseTheJackFunction(vehicle)
@@ -1632,7 +1441,7 @@ function FetchVehicleBodyDamageReport(vehicle, plate)
 	for i, v in pairs(spotsD) do
 		if bIndexes[i] ~= -1 then
 			local z = v.pos.z
-			if i == 1 or i == 3 then
+			if i == 1 or i == 3 or i == 2 then
 				z = z + 0.2
 			end
 			exports["bt-target"]:AddBoxZone("spot"..i, vector3(v.pos.x, v.pos.y, z), 1.0, 1.0, {
@@ -1762,6 +1571,7 @@ AddEventHandler('t1ger_mechanicjob:installBodyPartCL', function(id, val)
 							exports["np-ui"]:showInteraction('[G] to install part', 'installBody')
 						
 							if IsControlJustPressed(0, 47) then
+								exports["np-ui"]:hideInteraction('installBody')
 								installingPart = true
 								local plate = GetVehicleNumberPlateText(vehicle):gsub("^%s*(.-)%s*$", "%1")
 								if id == 1 then
@@ -1885,10 +1695,10 @@ function RefreshVehicleDamage(vehicle, plate)
 			SetVehicleWheelYRotation(vehicle, i, wheelProperties[plate][i + 1].yRotation)
 		end
 	end
-	RemoveVehicleWindow(vehicle, 0)
-	RemoveVehicleWindow(vehicle, 1)
-	RemoveVehicleWindow(vehicle, 2)
-	RemoveVehicleWindow(vehicle, 3)
+	--RemoveVehicleWindow(vehicle, 0)
+	--RemoveVehicleWindow(vehicle, 1)
+	--RemoveVehicleWindow(vehicle, 2)
+	--RemoveVehicleWindow(vehicle, 3)
 end
 
 -- On the road repairs:

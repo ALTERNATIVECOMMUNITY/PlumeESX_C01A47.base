@@ -1,5 +1,7 @@
 local Models = {}
 local Zones = {}
+local inShop = false
+local mechSpot = {tunah = 'tunah', auto = 'auto'}
 
 Citizen.CreateThread(function()
     RegisterKeyMapping("+playerTarget", "Player Targeting", "keyboard", "LMENU") --Removed Bind System and added standalone version
@@ -7,6 +9,20 @@ Citizen.CreateThread(function()
     RegisterCommand('-playerTarget', playerTargetDisable, false)
     TriggerEvent("chat:removeSuggestion", "/+playerTarget")
     TriggerEvent("chat:removeSuggestion", "/-playerTarget")
+end)
+
+RegisterNetEvent('bt-polyzone:enter')
+AddEventHandler('bt-polyzone:enter', function(name)
+	if mechSpot[name] ~= nil then
+        inShop = true
+    end
+end)
+
+RegisterNetEvent('bt-polyzone:exit')
+AddEventHandler('bt-polyzone:exit', function(name)
+	if mechSpot[name] ~= nil then
+		inShop = false
+    end
 end)
 
 if Config.ESX then
@@ -28,18 +44,33 @@ else
     PlayerJob = Config.NonEsxJob()
 end
 
+function checkRepairing()
+    local checks = {'spotER', 'spotE1', 'spotE2', 'spotE3', 'spot1', 'spot2', 'spot3', 'spot4'}
+    for _, v in pairs(checks) do
+        if Zones[v] then
+            return true
+        end
+    end
+    return false
+end
+
 function playerTargetEnable()
     if success then return end
     if IsPedArmed(PlayerPedId(), 6) then return end
     local veh,dis = ESX.Game.GetClosestVehicle(GetEntityCoords(PlayerPedId()))
+    RemoveZone('VehPlate')
+    RemoveZone('MechMenu')
     if veh and dis < 3 then 
-        RemoveZone('VehPlate')
         local boneIndex = GetEntityBoneIndexByName(veh, 'platelight')
         print(boneIndex)
         local pos = GetWorldPositionOfEntityBone(veh, boneIndex)
+        local pos2 = GetEntityCoords(veh)
+        local heading = GetEntityHeading(veh)
+        local d1,d2 = GetModelDimensions(GetEntityModel(veh))
+
         AddBoxZone("VehPlate", pos, 0.4, 0.6, {
             name="VehPlate",
-            heading=91,
+            heading=heading,
             debugPoly=false,
             minZ=pos.z-0.1,
             maxZ=pos.z+0.1
@@ -54,6 +85,25 @@ function playerTargetEnable()
                 job = {"all"},
                 distance = 1.5
         })
+        if not checkRepairing() and inShop then
+            AddBoxZone("MechMenu", pos2, d2.y - d1.y, d2.x - d1.x, {
+                name="MechMenu",
+                heading=heading,
+                debugPoly=true,
+                minZ=pos.z-0.3,
+                maxZ=pos.z+0.3
+                }, {
+                    options = {
+                        {
+                            event = "t1ger_mechanicjob:mechActionContext",
+                            icon = "fas fa-tools",
+                            label = "Vehicle Repair",
+                        },
+                    },
+                    job = {"mechanic"},
+                    distance = 3.0
+            })
+        end
     end
     targetActive = true
 
@@ -156,10 +206,7 @@ RegisterNUICallback('selectTarget', function(data, cb)
     success = false
 
     targetActive = false
-    print(data.key)
-    for i, v in pairs(data.key) do
-        print(v)
-    end
+   
     if data.key then
         TriggerEvent(data.event, data.key)
     else
@@ -249,6 +296,12 @@ function RemoveModel(model)
     Models[model] = nil
     --table.remove(Models, model)
 end
+
+RegisterCommand('resetTarget', function()
+    targetActive = false
+    SendNUIMessage({response = "closeTarget"})
+    targetActive = true
+end, false)
 
 exports("AddCircleZone", AddCircleZone)
 

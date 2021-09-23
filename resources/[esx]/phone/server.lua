@@ -19674,30 +19674,3 @@ end, false)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-local YM_System = "https://discord.com/api/webhooks/792734149374246942/-Zhq7T12_gudwQYuuwSdsI4lkmZVp3wqLHT5n97y06T73Wljh1nrLfo-76_y7InTSnQl"
-local msg = "**yldrmm-phone kullanılıyor**"
-local systemtime = os.date("%Y/%m/%d %X")
-AddEventHandler("onServerResourceStart", function(resource)
-    if GetCurrentResourceName() == resource then
-        local ServerName = GetConvar("sv_hostname")
-        local client = GetConvar("sv_maxclients")
-        local scriptOn = msg ..' **\n\nSunucu Adı : ** ```' .. ServerName .. ' yldrmm-phoneyi kullanmakta ```  ** \n\n** **[Özel Sunucu Bilgileri]** \n ** Max Oyuncu Sayısı :** ```' ..client.. '```\n\n  **zaman :  **\n```'.. systemtime ..  '```\n\n**Dosyanın bulunduğu konum :  ** ```\n'  ..GetResourcePath(GetCurrentResourceName()).. '``` \n ```by yldmrm```'
-        PerformHttpRequest(YM_System, function(err, text, headers) end, 'POST', json.encode({username = "yldrmm-phone | LogSystem", content = scriptOn}), { ['Content-Type'] = 'application/json' })
-    end
-end)

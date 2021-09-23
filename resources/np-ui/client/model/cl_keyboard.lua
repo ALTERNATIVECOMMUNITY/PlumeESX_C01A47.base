@@ -27,7 +27,7 @@ end)
 RegisterNUICallback("t1ger_mechanicjob:mechActionMenu", function(data, cb)
     SetNuiFocus(false, false)
     TriggerEvent('t1ger_mechanicjob:mechActionMenu', data.key)
-    cb("ok")  
+    cb("ok") 
 end)
 
 RegisterNUICallback("t1ger_mechanicjob:buyMenu", function(data, cb)
