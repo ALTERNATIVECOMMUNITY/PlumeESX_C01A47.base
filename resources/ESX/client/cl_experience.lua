@@ -41,7 +41,7 @@ function CreateShowroomVehicle(showroom, vehicleName)
   RequestModel(vehicleName)
 
   while not HasModelLoaded(vehicleName) do
-    Citizen.Wait(0)
+    Citizen.Wait(100)
   end
   SetModelAsNoLongerNeeded(vehicleName)
 

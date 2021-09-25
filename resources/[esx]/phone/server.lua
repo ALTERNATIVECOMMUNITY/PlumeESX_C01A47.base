@@ -1,10 +1,18 @@
 
 
 ESX = nil
-
-TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
+name = {}
+TriggerEvent('esx:getSharedObject', function(obj) 
+    ESX = obj 
+    TriggerEvent('Server:GetHandle')
+end)
 
 local callID = nil
+
+Citizen.CreateThread(function()
+
+
+end)
 
 MySQL.ready(function ()
     TriggerEvent('deleteAllYP')
@@ -44,8 +52,6 @@ AddEventHandler('Server:GetHandle', function()
     local src = source
     local xPlayer = ESX.GetPlayerFromId(src)
     local identifier = xPlayer.getIdentifier()
-    print(identifier)
-    local name 
     local result = MySQL.Sync.fetchAll("SELECT * FROM users WHERE identifier = @identifier", {['@identifier'] = identifier})
 	if result[1] ~= nil then
         
@@ -100,7 +106,6 @@ end)
 
 RegisterNetEvent('getContacts')
 AddEventHandler('getContacts', function()
-    print(source)
     local src = source
     local xPlayer = ESX.GetPlayerFromId(src)
     local identifier = xPlayer.getIdentifier()
@@ -263,7 +268,6 @@ end)
 
 RegisterNetEvent('phone:sendSMSNPC')
 AddEventHandler('phone:sendSMSNPC', function(message)
-    print(source)
     local src = source
     local xPlayer = ESX.GetPlayerFromId(src)
     local mynumber = '4014554908'
@@ -572,6 +576,186 @@ RegisterCommand("telefonara", function(source, args, raw)
     local xPlayer = ESX.GetPlayerFromId(source)
         TriggerClientEvent('phone:makecall', src, pnumber)
 end, false)
+
+local BuiltMaps = {}
+local Races = {}
+
+RegisterServerEvent('racing-global-race')
+AddEventHandler('racing-global-race', function(map, laps, counter, reverseTrack, uniqueid, raceName, startTime, mapCreator, mapDistance, mapDescription, street1, street2)
+    print('starting race')
+    Races[uniqueid] = { 
+        ["identifier"] = uniqueid, 
+        ["map"] = map, 
+        ["laps"] = laps,
+        ["counter"] = counter,
+        ["reverseTrack"] = reverseTrack, 
+        ["racers"] = {}, 
+        ["open"] = true, 
+        ["raceName"] = raceName, 
+        ["startTime"] = startTime, 
+        ["mapCreator"] = mapCreator, 
+        ["mapDistance"] = mapDistance, 
+        ["mapDescription"] = mapDescription,
+        ["raceComplete"] = false
+    }
+
+    TriggerEvent('racing:server:sendData', uniqueid, -1, 'event', 'open')
+    local waitperiod = (counter * 1000)
+    Wait(waitperiod)
+    Races[uniqueid]["open"] = false
+    -- if(math.random(1, 10) >= 5) then
+    --     TriggerEvent("dispatch:svNotify", {
+    --         dispatchCode = "10-94",
+    --         firstStreet = street1,
+    --         secondStreet = street2,
+    --         origin = {
+    --             x = BuiltMaps[map]["checkpoints"][1].x,
+    --             y = BuiltMaps[map]["checkpoints"][1].y,
+    --             z = BuiltMaps[map]["checkpoints"][1].z
+    --         }
+    -- })
+    -- end
+    TriggerEvent('racing:server:sendData', uniqueid, -1, 'event', 'close')
+end)
+
+RegisterServerEvent('racing-join-race')
+AddEventHandler('racing-join-race', function(identifier)
+    local src = source
+    local player = ESX.GetPlayerFromId(src)
+    local playername = ""..name.firstname.." "..name.lastname..""
+    Races[identifier]["racers"] = {["name"] = playername, ["total"] = 0, ["fastest"] = 0 }
+    TriggerEvent('racing:server:sendData', identifier, src, 'event')
+end)
+
+RegisterServerEvent('race:completed2')
+AddEventHandler('race:completed2', function(fastestLap, overall, sprint, identifier)
+    local src = source
+    local player = ESX.GetPlayerFromId(src)
+    local playername = ""..name.firstname.." "..name.lastname..""
+    Races[identifier]["racers"] = { ["name"] = playername, ["total"] = overall, ["fastest"] = fastestLap}
+    Races[identifier].sprint = sprint
+    TriggerEvent('racing:server:sendData', identifier, -1, 'event')
+
+    if not Races[identifier]["raceComplete"] then
+        MySQL.Async.execute("UPDATE racing_tracks SET races = races+1 WHERE id = @mapID", {
+            ['@mapID'] = tonumber(Races[identifier].map) 
+        }, function(rowsChanged)
+            if rowsChanged > 0 then
+                Races[identifier]["raceComplete"] = true
+            end
+        end)
+    end
+
+    if(Races[identifier].sprint and Races[identifier]["racers"]["total"]) then
+        MySQL.Async.execute("UPDATE racing_tracks SET fastest_sprint = @fSprint, fastest_sprint_name = @fSprintName WHERE id = @id and (fastest_sprint IS NULL or fastest_sprint > @fSprint)",{
+            ['@fSprint'] = tonumber(Races[identifier]["racers"]["total"]),
+            ['@fSprintName'] = tostring(playername),
+            ['@id'] = tonumber(Races[identifier].map)
+        }, function(rowsChanged)
+            if rowsChanged > 0 then
+            end
+        end)
+    else
+        MySQL.Async.execute("UPDATE racing_tracks SET fastest_lap = @fLap, fastest_name = @fName WHERE id = @id and (fastest_lap IS NULL or fastest_lap > @fLap)", {
+            ['@fLap'] = tonumber(Races[identifier]["racers"]["fastest"]),
+            ['@fName'] = tostring(playername), 
+            ['@id'] = tonumber(Races[identifier].map),
+        }, function(rowsChanged)
+            if rowsChanged > 0 then
+            end
+        end)
+    end
+end)
+
+RegisterServerEvent("racing:server:sendData")
+AddEventHandler('racing:server:sendData', function(pEventId, clientId, changeType, pSubEvent)
+    local dataObject = {
+        eventId = pEventId, 
+        event = changeType,
+        subEvent = pSubEvent,
+        data = {}
+    }
+    if (changeType =="event") then
+        dataObject.data = (pEventId ~= -1 and Races[pEventId] or Races)
+    elseif (changeType == "map") then
+        dataObject.data = (pEventId ~= -1 and BuiltMaps[pEventId] or BuiltMaps)
+    end
+    TriggerClientEvent("racing:data:set", -1, dataObject)
+end)
+
+function buildMaps(subEvent)
+    local src = source
+    subEvent = subEvent or nil
+    BuiltMaps = {}
+    MySQL.Async.fetchAll("SELECT * FROM racing_tracks", {}, function(result)
+        for i=1, #result do
+            local correctId = tostring(result[i].id)
+            BuiltMaps[correctId] = {
+                checkpoints = json.decode(result[i].checkPoints),
+                track_name = result[i].track_names,
+                creator = result[i].creator,
+                distance = result[i].distance,
+                races = result[i].races,
+                fastest_car = result[i].fastest_car,
+                fastest_name = result[i].fastest_name,
+                fastest_lap = result[i].fastest_lap,
+                fastest_sprint = result[i].fastest_sprint, 
+                fastest_sprint_name = result[i].fastest_sprint_name,
+                description = result[i].description
+            }
+        end
+        local target = -1
+        if(subEvent == 'mapUpdate') then
+            target = src
+        end
+        TriggerEvent('racing:server:sendData', -1, target, 'map', subEvent)
+    end)
+end
+
+RegisterServerEvent('racing-build-maps')
+AddEventHandler('racing-build-maps', function()
+    buildMaps('mapUpdate')
+end)
+
+RegisterServerEvent('racing-map-delete')
+AddEventHandler('racing-map-delete', function(deleteID)
+    MySQL.Async.execute("DELETE FROM racing_tracks WHERE id = @id", {
+        ['id'] = deleteID })
+    Wait(1000)
+    buildMaps()
+end)
+
+RegisterServerEvent('racing-retreive-maps')
+AddEventHandler('racing-retreive-maps', function()
+    local src = source
+    buildMaps('noNUI', src)
+end)
+
+RegisterServerEvent('racing-save-map')
+AddEventHandler('racing-save-map', function(currentMap,name,description,distanceMap)
+    local src = source
+    local player = ESX.GetPlayerFromId(src)
+    local char = player.getName()
+    local playername = char
+    -- exports.ghmattimysql:execute("INSERT INTO racing_tracks_new ('checkpoints', 'creator', 'track_name', 'distance', 'description') VALUES (@currentMap, @creator, @trackname, @distance, @description)",
+    -- {['currentMap'] = json.encode(currentMap), ['creator'] = playername, ['trackname'] = name, ['distance'] = distanceMap, ['description'] = description})
+
+   -- MySQL.Async.execute("INSERT INTO `racing_tracks` (`checkpoints`, `creator`, `track_name`, `distance`, `description`) VALUES ('"..json.encode(currentMap).."', '"..tostring(playername).."', '"..tostring(name).."', '"..distanceMap.."',  '"..description.."')", function(results)
+      --  Wait(1000)
+       -- buildMaps()
+   -- end)
+
+    MySQL.Async.execute('INSERT INTO `racing_tracks` (`checkpoints`, `creator`, `track_names`, `distance`, `description`) VALUES (@map, @pname, @name, @distance, @des)', {
+        ['@map'] = json.encode(currentMap),
+        ['@pname'] = playername,
+        ['@name'] = name,
+        ['@distance'] = distanceMap,
+        ['@des'] = des,
+    }, function(rowsChanged)
+        Wait(1000)
+        buildMaps()
+    end)
+end)
 
 
 

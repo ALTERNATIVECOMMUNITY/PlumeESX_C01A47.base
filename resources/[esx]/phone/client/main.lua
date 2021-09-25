@@ -40,7 +40,6 @@ Citizen.CreateThread(function()
   	end
 
   	while ESX.GetPlayerData() == nil do
-      print('waiting')
 		Citizen.Wait(250)
 	  end
 	
@@ -253,7 +252,6 @@ function CalculateTimeToDisplay()
   return obj
 end
 RegisterNUICallback('btnGiveKey', function(data, cb)
-  print("Hennesy")
   TriggerEvent("houses:GiveKey")
 end)
 RegisterNetEvent("returnPlayerKeys")
@@ -434,7 +432,6 @@ RegisterNUICallback('btnTaskGroups', function()
     local jobgrade = ESX.PlayerData.job.grade
     local rankConverted = ESX.PlayerData.job.grade_label
 
-    print(jobgrade)
 
     local groupObject = {}
 
@@ -1684,6 +1681,17 @@ local mousenumbers = {
    [16] = 170,
 }
 
+local currentMap = {}
+local customMaps = {}
+local dst = 30.0
+local creatingMap = false
+local SetBlips = {}
+local particleList = {}
+local currentRaces = {}
+local JoinedRaces = {}
+local racing = false
+local racesStarted = 0
+local mylastid = "NA"
 
 -- Disable controls while GUI open
 Citizen.CreateThread(function()
@@ -1731,7 +1739,6 @@ Citizen.CreateThread(function()
     end
 
     if creatingMap then
-
       local plycoords = GetEntityCoords(GetPlayerPed(-1))
 
       DrawMarker(27,plycoords.x,plycoords.y,plycoords.z,0,0,0,0,0,0,dst,dst,0.3001,255,255,255,255,0,0,0,0)
@@ -1771,7 +1778,178 @@ Citizen.CreateThread(function()
 end)
 
 function ShowText(text)
-  TriggerEvent("DoLongHudText",text)
+  exports['mythic_notify']:DoHudText('inform', text)
+end
+
+function StartEvent(map, laps, counter, reverseTrack, raceName, startTime,
+  mapCreator, mapDistance, mapDescription)
+
+  local map = tostring(map)
+  local laps = tonumber(laps)
+  local counter = tonumber(counter)
+  local mapCreator = tostring(mapCreator)
+  local mapDistance = tonumber(mapDistance)
+  local mapDescription = tostring(mapDescription)
+  local reverseTrack = reverseTrack
+
+  if map == 0 then
+    ShowText("Pick a map or use the old racing system.")
+    return
+  end
+
+  local mapCheckpoints = customMaps[map]["checkpoints"]
+  local checkPointIndex = 1
+  if reverseTrack and laps == 0 then checkPointIndex = #mapCheckpoints end
+
+  local ped = GetPlayerPed(-1)
+  local plyCoords = GetEntityCoords(ped)
+  local dist = Vdist(mapCheckpoints[checkPointIndex]["x"],
+     mapCheckpoints[checkPointIndex]["y"],
+     mapCheckpoints[checkPointIndex]["z"], plyCoords.x,
+     plyCoords.y, plyCoords.z)
+
+  if dist > 40.0 then
+    ShowText("You are too far away!")
+    EndRace()
+    return
+  end
+  ShowText("Race Starting on " .. customMaps[map]["track_name"] .. " with " ..
+  laps .. " laps in " .. counter .. " seconds!")
+  racesStarted = racesStarted + 1
+  local cid = ESX.PlayerData.identifier
+  local uniqueid = cid .. "-" .. racesStarted
+  local s1, s2 = GetStreetNameAtCoord(mapCheckpoints[checkPointIndex].x,
+                      mapCheckpoints[checkPointIndex].y,
+                      mapCheckpoints[checkPointIndex].z)
+  local street1 = GetStreetNameFromHashKey(s1)
+  zone = tostring(GetNameOfZone(mapCheckpoints[checkPointIndex].x,
+                mapCheckpoints[checkPointIndex].y,
+                mapCheckpoints[checkPointIndex].z))
+  local playerStreetsLocation = GetLabelText(zone)
+  --local dir = getCardinalDirectionFromHeading()
+  local street1 = street1 .. ", " .. playerStreetsLocation
+  local street2 = GetStreetNameFromHashKey(s2) .. " " --.. dir
+  TriggerServerEvent("racing-global-race", map, laps, counter, reverseTrack,
+     uniqueid, raceName, startTime, mapCreator,
+     mapDistance, mapDescription, street1, street2)
+end
+
+function hudUpdate(pHudState, pHudData)
+  pHudState = pHudState or 'finished'
+  pHudData = pHudData or '{}'
+  SendNUIMessage({
+    openSection = "racing:hud:update",
+    hudState = pHudState,
+    hudData = pHudData
+  })
+end
+
+function RunRace(identifier)
+  local map = currentRaces[identifier].map
+  local laps = currentRaces[identifier].laps
+  local counter = currentRaces[identifier].counter
+  local sprint = false
+
+  if laps == 0 then
+      laps = 1
+      sprint = true
+  end
+  local myLap = 0
+
+  local checkpoints = #customMaps[map]["checkpoints"]
+  local mycheckpoint = 1
+  local ped = GetPlayerPed(-1)
+
+  SetBlipColour(SetBlips[1], 3)
+  SetBlipScale(SetBlips[1], 1.6)
+
+  ShowText("Race Starts in 3")
+  PlaySound(-1, "3_2_1", "HUD_MINI_GAME_SOUNDSET", 0, 0, 1)
+  Citizen.Wait(1000)
+  ShowText("Race Starts in 2")
+  PlaySound(-1, "3_2_1", "HUD_MINI_GAME_SOUNDSET", 0, 0, 1)
+  Citizen.Wait(1000)
+  ShowText("Race Starts in 1")
+  PlaySound(-1, "3_2_1", "HUD_MINI_GAME_SOUNDSET", 0, 0, 1)
+  Citizen.Wait(1000)
+  PlaySound(-1, "3_2_1", "HUD_MINI_GAME_SOUNDSET", 0, 0, 1)
+  ShowText("GO!")
+  hudUpdate("start",
+            {isSprint = sprint, maxLaps = laps, maxCheckpoints = checkpoints})
+  while myLap < laps + 1 and racing do
+      Wait(1)
+      local plyCoords = GetEntityCoords(ped)
+
+      if (Vdist(customMaps[map]["checkpoints"][mycheckpoint]["x"],
+                customMaps[map]["checkpoints"][mycheckpoint]["y"],
+                customMaps[map]["checkpoints"][mycheckpoint]["z"],
+                plyCoords.x, plyCoords.y, plyCoords.z)) <
+          customMaps[map]["checkpoints"][mycheckpoint]["dist"] then
+          SetBlipColour(SetBlips[mycheckpoint], 3)
+          SetBlipScale(SetBlips[mycheckpoint], 1.0)
+
+          -- PlaySound(-1, "CHECKPOINT_NORMAL", "HUD_MINI_GAME_SOUNDSET", 0, 0, 1)
+          mycheckpoint = mycheckpoint + 1
+
+          SetBlipColour(SetBlips[mycheckpoint], 2)
+          SetBlipScale(SetBlips[mycheckpoint], 1.6)
+          SetBlipAsShortRange(SetBlips[mycheckpoint - 1], true)
+          SetBlipAsShortRange(SetBlips[mycheckpoint], false)
+
+          if mycheckpoint > checkpoints then mycheckpoint = 1 end
+
+          SetNewWaypoint(customMaps[map]["checkpoints"][mycheckpoint]["x"],
+                         customMaps[map]["checkpoints"][mycheckpoint]["y"])
+
+          if not sprint and mycheckpoint == 1 then
+              SetBlipColour(SetBlips[1], 2)
+              SetBlipScale(SetBlips[1], 1.6)
+          end
+
+          if not sprint and mycheckpoint == 2 then
+              myLap = myLap + 1
+
+              -- Uncomment these lines to make the checkpoints re-draw on each lap
+              -- ClearBlips()
+              -- RemoveCheckpoints()
+              -- LoadMapBlips(map)
+              SetBlipColour(SetBlips[1], 3)
+              SetBlipScale(SetBlips[1], 1.0)
+              SetBlipColour(SetBlips[2], 2)
+              SetBlipScale(SetBlips[2], 1.6)
+          elseif sprint and mycheckpoint == 1 then
+              myLap = myLap + 2
+          end
+
+          hudUpdate("update",
+                    {curLap = myLap, curCheckpoint = (mycheckpoint - 1)})
+      end
+  end
+
+  hudUpdate("finished", {eventId = identifier})
+
+  PlaySound(-1, "3_2_1", "HUD_MINI_GAME_SOUNDSET", 0, 0, 1)
+  TriggerEvent("DoLongHudText","You have finished!",1)
+  Wait(10000)
+  racing = false
+  hudUpdate("clear")
+  ClearBlips()
+  RemoveCheckpoints()
+end
+
+function EndRace()
+  ClearBlips()
+  RemoveCheckpoints()
+end
+
+function RemoveCheckpoints()
+  for i = 1, #checkpointMarkers do
+      SetEntityAsNoLongerNeeded(checkpointMarkers[i].left)
+      DeleteObject(checkpointMarkers[i].left)
+      SetEntityAsNoLongerNeeded(checkpointMarkers[i].right)
+      DeleteObject(checkpointMarkers[i].right)
+      checkpointMarkers[i] = nil
+  end
 end
 
 -- Opens our phone
@@ -3017,27 +3195,150 @@ end)
 RegisterNUICallback('settingsResetControls', function()
   TriggerEvent("np-base:cl:player_control",nil)
 end) ]]
-
-local currentMap = {}
- local customMaps = {}
- local dst = 30.0
- local creatingMap = false
- local SetBlips = {}
- local particleList = {}
- local currentRaces = {}
- local JoinedRaces = {}
- local racing = false
- local racesStarted = 0
- local mylastid = "NA"
- 
  
  RegisterNUICallback('racing:event:setup', function()
-   ExecuteCommand('race record')
+   --ExecuteCommand('race record')
    TriggerEvent('DoLongHudText', "Checkpoint recording started, place your checkpoints on the map", 1)
  end)
+
+ function StartMapCreation()
+  currentMap = {}
+  dst = 30.0;
+  creatingMap = true
+end
  
- 
- function StartEvent(map,laps,counter,raceName, startTime, mapCreator, mapDistance, mapDescription)
+function CancelMap()
+  -- get distance here between checkpoints
+  creatingMap = false
+end
+
+function ClearBlips()
+  for i = 1, #SetBlips do
+    RemoveBlip(SetBlips[i])
+  end
+  SetBlips = {}
+end
+
+function AddCheckPoint()
+  loadCheckpointModels()
+  local plycoords = GetEntityCoords(GetPlayerPed(-1))
+  local ballsdick = dst/2
+  local fx,fy,fz = table.unpack(GetOffsetFromEntityInWorldCoords(GetPlayerPed(-1),  ballsdick, 0.0, -0.25))
+
+  local fx2,fy2,fz2 = table.unpack(GetOffsetFromEntityInWorldCoords(GetPlayerPed(-1), 0.0 - ballsdick, 0.0, -0.25))
+  
+  addCheckpointMarker(vector3(fx,fy,fz), vector3(fx2,fy2,fz2))
+
+  local start = false
+
+  if #currentMap == 0 then
+    start = true
+  end
+
+  local checkcounter = #currentMap + 1
+  currentMap[checkcounter] = { 
+    ["flare1x"] = FUCKK(fx), ["flare1y"] = FUCKK(fy), ["flare1z"] = FUCKK(fz),
+    ["flare2x"] = FUCKK(fx2), ["flare2y"] = FUCKK(fy2), ["flare2z"] = FUCKK(fz2),
+    ["x"] = FUCKK(plycoords.x),  ["y"] = FUCKK(plycoords.y), ["z"] = FUCKK(plycoords.z-1.1), ["start"] = start, ["dist"] = ballsdick, 
+  }
+
+  local key = #SetBlips+1
+  SetBlips[key] = AddBlipForCoord(plycoords.x,plycoords.y,plycoords.z)
+  SetBlipAsFriendly(SetBlips[key], true)
+  SetBlipSprite(SetBlips[key], 1)
+  ShowNumberOnBlip(SetBlips[key], key)
+  BeginTextCommandSetBlipName("STRING");
+  AddTextComponentString(tostring("Checkpoint " .. key))
+  EndTextCommandSetBlipName(SetBlips[key])
+
+end
+
+local checkpointMarkers = {}
+local isModelsLoaded = false
+function loadCheckpointModels()
+  local models = {}
+  models[1] = "prop_offroad_tyres02"
+  models[2] = "prop_beachflag_01"
+  for i = 1, #models do
+    local checkpointModel = GetHashKey(models[i])
+    RequestModel(checkpointModel)
+    while not HasModelLoaded(checkpointModel) do
+      Citizen.Wait(1)
+    end
+  end
+  isModelsLoaded = true
+end
+
+function addCheckpointMarker(leftMarker, rightMarker)
+  local model = #checkpointMarkers == 0 and 'prop_beachflag_01' or 'prop_offroad_tyres02'
+
+  local checkpointLeft = CreateObject(GetHashKey(model), leftMarker, false, false, false)
+  local checkpointRight = CreateObject(GetHashKey(model), rightMarker, false, false, false)
+  checkpointMarkers[#checkpointMarkers+1] = {
+    left = checkpointLeft,
+    right = checkpointRight
+  }
+  PlaceObjectOnGroundProperly(checkpointLeft)
+  SetEntityAsMissionEntity(checkpointLeft)
+  PlaceObjectOnGroundProperly(checkpointRight)
+  SetEntityAsMissionEntity(checkpointRight)
+end
+
+function LoadMapBlips(id, reverseTrack, laps)
+  local id = tostring(id)
+  ClearBlips()
+  loadCheckpointModels()
+  if(customMaps[id].checkpoints ~= nil) then
+    local checkpoints = customMaps[id].checkpoints
+    if reverseTrack then
+      local newCheckpoints = {}
+      local count = 1
+      for i=#checkpoints, 1, -1 do
+        newCheckpoints[count] = checkpoints[i]
+        count = count + 1
+      end
+      if laps ~= 0 then
+        table.insert(newCheckpoints, 1, checkpoints[1])
+        newCheckpoints[#newCheckpoints] = nil
+      end
+      checkpoints = newCheckpoints
+    end
+
+    for mId, map in pairs(checkpoints) do
+      local key = #SetBlips+1
+      SetBlips[key] = AddBlipForCoord(map["x"],map["y"],map["z"])
+      SetBlipAsFriendly(SetBlips[key], true)
+      SetBlipAsShortRange(SetBlips[key], true)
+      SetBlipSprite(SetBlips[key], 1)
+      ShowNumberOnBlip(SetBlips[key], key)
+      BeginTextCommandSetBlipName("STRING");
+      AddTextComponentString(tostring("Checkpoint " .. key))
+      EndTextCommandSetBlipName(SetBlips[key])
+
+      addCheckpointMarker(vector3(map["flare1x"], map["flare1y"], map["flare1z"]), vector3(map["flare2x"], map["flare2y"], map["flare2z"]))
+    end
+  end
+end
+
+function PopLastCheckpoint()
+  if #currentMap > 1 then
+    local lastCheckpoint = #currentMap
+    SetEntityAsNoLongerNeeded(checkpointMarkers[lastCheckpoint].left)
+    DeleteObject(checkpointMarkers[lastCheckpoint].left)
+    SetEntityAsNoLongerNeeded(checkpointMarkers[lastCheckpoint].right)
+    DeleteObject(checkpointMarkers[lastCheckpoint].right)
+    RemoveBlip(SetBlips[lastCheckpoint])
+    table.remove(checkpointMarkers)
+    table.remove(currentMap)
+    table.remove(SetBlips)
+  end
+end
+
+function ShowText(text)
+  TriggerEvent("DoLongHudText",text)
+end
+--[[
+function StartEvent(map,laps,counter,raceName, startTime, mapCreator, mapDistance, mapDescription)
  
    local map = tostring(map)
    local laps = tonumber(laps)
@@ -3074,7 +3375,7 @@ local currentMap = {}
    local street2 = GetStreetNameFromHashKey(s2) .. " " .. dir
    TriggerServerEvent("racing-global-race",map, laps, counter, uniqueid, cid, raceName, startTime, mapCreator, mapDistance, mapDescription, street1, street2)
  end
- 
+ ]]--
  function hudUpdate(pHudState, pHudData)
    pHudState = pHudState or 'finished'
    pHudData = pHudData or '{}'
@@ -3223,7 +3524,7 @@ local currentMap = {}
    return new
  end
  
- function SaveMap(name,description)
+function SaveMap(name,description)
    -- get distance here between checkpoints
  
    local distanceMap = 0.0
@@ -3237,14 +3538,14 @@ local currentMap = {}
    distanceMap = math.ceil(distanceMap)
  
    if #currentMap > 1 then
-     TriggerEvent("DoLongHudText","The map is being processed and should be available shortly.", 2)
+     ShowText("The map is being processed and should be available shortly.")
      TriggerServerEvent("racing-save-map",currentMap,name,description,distanceMap)
    else
-     TriggerEvent("DoLongHudText","Failed due to lack of checkpoints", 2)
+     ShowText("Failed due to lack of checkpoints")
    end
    currentMap = {}
    creatingMap = false
- end
+end
  
  RegisterNUICallback('racing:events:list', function()
    SendNUIMessage({
@@ -3252,34 +3553,36 @@ local currentMap = {}
      races = currentRaces,
      canMakeMap = true
    });
+   TriggerServerEvent("racing-retreive-maps")
+ end)
+
+ RegisterNUICallback('racing:events:highscore', function()
+  TriggerServerEvent("racing-retreive-maps")
+  Wait(300)
+  local highScoreObject = {}
+  for k,v in pairs(customMaps) do
+    highScoreObject[k] = {
+      fastestLap = v.fastest_lap,
+      fastestName = v.fastest_name,
+      fastestSprint = v.fastest_sprint,
+      fastestSprintName = v.fastest_sprint_name,
+      map = v.track_name,
+      noOfRaces = v.races,
+      mapDistance = v.distance
+    }
+  end
+
+  SendNUIMessage({
+    openSection = "racing:events:highscore",
+    highScoreList = highScoreObject
+  });
+end)
+ 
+ 
+RegisterNUICallback('racing:event:setup', function()
+   TriggerServerEvent("racing-build-maps")
  end)
  
- --[[RegisterNUICallback('racing:events:highscore', function()
-   TriggerServerEvent("racing-retreive-maps")
-   Wait(300)
-   local highScoreObject = {}
-   for k,v in pairs(customMaps) do
-     highScoreObject[k] = {
-       fastestLap = v.fastest_lap,
-       fastestName = v.fastest_name,
-       fastestSprint = v.fastest_sprint,
-       fastestSprintName = v.fastest_sprint_name,
-       map = v.track_name,
-       noOfRaces = v.races,
-       mapDistance = v.distance
-     }
-   end
- 
-   SendNUIMessage({
-     openSection = "racing:events:highscore",
-     highScoreList = highScoreObject
-   });
- end)]]--
- 
- -- Callback when setting up new Event
- --[[RegisterNUICallback('racing:event:setup', function()
-   TriggerServerEvent("racing-build-maps")
- end)]]--
  
  -- Fix
  RegisterNUICallback('racing:event:leave', function()
@@ -3291,43 +3594,59 @@ local currentMap = {}
  
  -- Fix
  RegisterNUICallback('racing:event:join', function(data)
-   RemoveCheckpoints()
-   local id = data.identifier
-   local ped = GetPlayerPed(-1)
-   local plyCoords = GetEntityCoords(ped)
- 
-   if Vdist(customMaps[currentRaces[id]["map"]]["checkpoints"][1]["x"], customMaps[currentRaces[id]["map"]]["checkpoints"][1]["y"], customMaps[currentRaces[id]["map"]]["checkpoints"][1]["z"],plyCoords.x,plyCoords.y,plyCoords.z) < 40 then
-     -- IF the race is OPEN and you are not in the race and youre not racing
-     if currentRaces[id]["open"] and not JoinedRaces[id] and not racing then
-       racing = true
-       JoinedRaces[id] = true
-       TriggerServerEvent("racing-join-race",id)
-       hudUpdate('starting')
-       ShowText("Joining Race!")
-       LoadMapBlips(currentRaces[id]["map"])
-     else
-       -- IF youre in this race and youre not racing
-       if (JoinedRaces[id] and not racing) then
-         racing = true
-         hudUpdate('starting')
-       else
-         ShowText("This race is closed or you are already in it!")
-       end
-     end
-   else
-     ShowText("You are too far away!")
-   end
- end)
+  RemoveCheckpoints()
+  local id = data.identifier
+  local ped = GetPlayerPed(-1)
+  local IsPlayerDriver = GetPedInVehicleSeat(GetVehiclePedIsIn(GetPlayerPed(-1)), -1) == GetPlayerPed(-1)
+  local plyCoords = GetEntityCoords(ped)
+
+  if not IsPlayerDriver then
+      TriggerEvent("DoLongHudText","You must be the driver of the vehicle to join this race.",2)
+      return
+  end
+
+  local mapCheckpoints = customMaps[currentRaces[id]["map"]]["checkpoints"]
+  local checkPointIndex = 1
+  if currentRaces[id]["reverseTrack"] and currentRaces[id]["laps"] == 0 then
+      checkPointIndex = #mapCheckpoints
+  end
+
+  if Vdist(mapCheckpoints[checkPointIndex]["x"],
+           mapCheckpoints[checkPointIndex]["y"],
+           mapCheckpoints[checkPointIndex]["z"], plyCoords.x, plyCoords.y,
+           plyCoords.z) < 40 then
+      -- IF the race is OPEN and you are not in the race and youre not racing
+      if currentRaces[id]["open"] and not JoinedRaces[id] and not racing then
+          racing = true
+          JoinedRaces[id] = true
+          TriggerServerEvent("racing-join-race", id)
+          hudUpdate('starting')
+          ShowText("Joining Race!")
+          LoadMapBlips(currentRaces[id]["map"],
+                       currentRaces[id]["reverseTrack"],
+                       currentRaces[id]["laps"])
+      else
+          -- IF youre in this race and youre not racing
+          if (JoinedRaces[id] and not racing) then
+              racing = true
+              hudUpdate('starting')
+          else
+              ShowText("This race is closed or you are already in it!")
+          end
+      end
+  else
+      ShowText("You are too far away!")
+  end
+end)
  
  -- Fix
- RegisterNUICallback('racing:event:start', function(data)
-   StartEvent(data.raceMap, data.raceLaps, data.raceCountdown, data.raceName, data.raceStartTime, data.mapCreator, data.mapDistance, data.mapDescription)
-   Wait(500)
-   SendNUIMessage({
-     openSection = "racing:events:list",
-     races = currentRaces
-   });
- end)
+RegisterNUICallback('racing:event:start', function(data)
+  StartEvent(data.raceMap, data.raceLaps, data.raceCountdown,
+             data.reverseTrack, data.raceName, data.raceStartTime,
+             data.mapCreator, data.mapDistance, data.mapDescription)
+  Wait(500)
+  SendNUIMessage({openSection = "racing:events:list", races = currentRaces});
+end)
  
  -- Fix this
  RegisterNUICallback('race:completed', function(data)
@@ -3338,12 +3657,7 @@ local currentMap = {}
  
  -- Racing:Map
  RegisterNUICallback('racing:map:create', function()
-   if not exports['StreetRaces']:isRecordingRace() then
-     ExecuteCommand('race record')
-     TriggerEvent('DoLongHudText', "Checkpoint recording started, place your checkpoints on the map", 1)
-   else
-     TriggerEvent('DoLongHudText', "Already recording race", 2)
-   end
+  StartMapCreation()
  end)
  
  RegisterNUICallback('racing:map:load', function(data)
@@ -3358,7 +3672,6 @@ local currentMap = {}
    ClearBlips()
    RemoveCheckpoints()
    if data.id == "0" then
-     print("you suck")
    else
      TriggerServerEvent("racing-map-delete",customMaps[tonumber(data.id)]["dbid"])
    end
@@ -3369,25 +3682,18 @@ local currentMap = {}
  end)
  
  RegisterNUICallback('racing:map:cancel', function()
-   if exports['StreetRaces']:isRecordingRace() then
-     TriggerEvent('racing:cleanupRace')
-     TriggerEvent('DoLongHudText', "Race Setup cancelled", 2)
-   else
-     TriggerEvent('DoLongHudText', "Not recording race", 2)
-   end
+  EndRace()
+  CancelMap()
  end)
  
  RegisterNUICallback('racing:map:save', function(data)
-   if exports['StreetRaces']:cpCount() then
-     ExecuteCommand("race start " .. data.name .. " " .. data.desc)
-     TriggerEvent('DoLongHudText', 'Race started with a bet amount of $' .. data.name, 1)
-   else
-     TriggerEvent('DoLongHudText', 'No checkpoints set', 2)
-   end
+  EndRace()
+  SaveMap(data.name,data.desc)
  end)
  
  RegisterNetEvent('racing:data:set')
  AddEventHandler('racing:data:set', function(data)
+  print('racing:data:set', json.encode(data))
    if(data.event == "map") then
      if (data.eventId ~= -1) then
        customMaps[data.eventId] = data.data
